@@ -2,55 +2,46 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>콕끼리 전적판</title>
     <style>
-        :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f1f4f7; }
-        body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        .wrapper { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: row; gap: 20px; flex-wrap: wrap; }
-        .main-board { flex: 1; min-width: 320px; }
-        .side-bar { width: 320px; }
-        @media (max-width: 1024px) { .side-bar { width: 100%; } }
-        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        h2 { font-size: 1.2rem; margin: 0 0 20px 0; color: var(--dark); border-left: 5px solid var(--primary); padding-left: 12px; }
-        .match-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
-        @media (max-width: 850px) { .match-grid { grid-template-columns: 1fr; } }
-        .set-row { border: 2px solid #edf2f7; border-radius: 15px; padding: 20px 15px 15px; background: #fff; position: relative; }
-        .set-label { position: absolute; top: -12px; left: 15px; background: var(--primary); color: white; padding: 2px 15px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; }
-        .team-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .team-area { padding: 10px; border-radius: 12px; background: #f8fafc; border: 2px solid transparent; text-align: center; }
+        :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; }
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); }
+        .wrapper { display: flex; flex-direction: column; gap: 15px; }
+        .card { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        h2 { font-size: 1.1rem; margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; }
+        h2::before { content: ''; width: 4px; height: 18px; background: var(--primary); border-radius: 2px; display: inline-block; }
+        .set-row { border: 1px solid #eee; border-radius: 15px; padding: 15px; margin-bottom: 15px; background: #fff; }
+        .set-label { font-weight: 800; color: var(--primary); font-size: 0.9rem; margin-bottom: 10px; display: block; }
+        .team-container { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .team-area { padding: 10px; border-radius: 12px; background: #f9f9f9; border: 2px solid transparent; transition: 0.2s; }
         .team-area.selected { background: #eafaf1; border-color: var(--win); }
-        .player-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-        select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e0; font-size: 14px; }
-        .record-btn { width: 100%; padding: 15px 5px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 0.9rem; font-weight: bold; color: #718096; }
-        .record-btn.active { background: var(--win); color: white; border-color: var(--win); }
-        .rank-table { width: 100%; border-collapse: collapse; }
-        .rank-table th { background: #edf2f7; padding: 10px; font-size: 0.8rem; }
-        .rank-table td { padding: 10px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
-        .apply-all { width: 100%; padding: 20px; background: var(--dark); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        select { width: 100%; padding: 12px 5px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 5px; font-size: 14px; appearance: none; background: white; }
+        .record-btn { width: 100%; padding: 12px 0; border: 1px solid #ccc; border-radius: 8px; background: white; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: #888; }
+        .record-btn.active { background: var(--win); color: white; border-color: var(--win); box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3); }
+        .apply-all { width: 100%; padding: 18px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; position: sticky; bottom: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); }
+        .rank-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .rank-table th { padding: 10px; border-bottom: 2px solid #eee; color: #7f8c8d; }
+        .rank-table td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #f9f9f9; }
     </style>
 </head>
 <body>
 
 <div class="wrapper">
-    <div class="main-board">
-        <div class="card">
-            <h2>🎾 경기 결과 자율 기록 (SET 1-6)</h2>
-            <div class="match-grid" id="matchContainer"></div>
-            <button class="apply-all" onclick="confirmAndSave()">전적 합산하기</button>
-        </div>
+    <div class="card">
+        <h2>🏆 실시간 순위</h2>
+        <table class="rank-table">
+            <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th></tr></thead>
+            <tbody id="rankBody"></tbody>
+        </table>
     </div>
-    <div class="side-bar">
-        <div class="card">
-            <h3>실시간 순위</h3>
-            <table class="rank-table">
-                <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th></tr></thead>
-                <tbody id="rankBody"></tbody>
-            </table>
-            <button onclick="resetData()" style="margin-top:20px; font-size:11px; color:#ccc; background:none; border:none; cursor:pointer;">데이터 초기화</button>
-        </div>
+    <div class="card">
+        <h2>🏸 경기 결과 기록</h2>
+        <div id="matchContainer"></div>
     </div>
 </div>
+
+<button class="apply-all" onclick="confirmAndSave()">전적 합산하기</button>
 
 <script>
     const initialPlayers = [
@@ -65,7 +56,7 @@
         {name: "무지", seed: "E-"}, {name: "완태", seed: "E-"}, {name: "루피", seed: "E-"}
     ].map(p => ({...p, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-final-v3')) || initialPlayers;
+    let players = JSON.parse(localStorage.getItem('kok-mobile-v1')) || initialPlayers;
     let winners = Array(6).fill(null);
 
     function initBoard() {
@@ -74,15 +65,15 @@
         for(let i=1; i<=6; i++) {
             html += `
                 <div class="set-row">
-                    <div class="set-label">SET ${i}</div>
+                    <span class="set-label">SET ${i}</span>
                     <div class="team-container">
                         <div class="team-area" id="set${i}-t0">
-                            <div class="player-grid">${[1,2,3,4].map(p => `<select id="s${i}-t0-p${p}"></select>`).join('')}</div>
-                            <button class="record-btn" id="btn${i}-0" onclick="markWinner(${i}, 0)">A팀 승리</button>
+                            <select id="s${i}-t0-p1"></select><select id="s${i}-t0-p2"></select>
+                            <button class="record-btn" id="btn${i}-0" onclick="markWinner(${i}, 0)">A팀 승</button>
                         </div>
                         <div class="team-area" id="set${i}-t1">
-                            <div class="player-grid">${[1,2,3,4].map(p => `<select id="s${i}-t1-p${p}"></select>`).join('')}</div>
-                            <button class="record-btn" id="btn${i}-1" onclick="markWinner(${i}, 1)">B팀 승리</button>
+                            <select id="s${i}-t1-p1"></select><select id="s${i}-t1-p2"></select>
+                            <button class="record-btn" id="btn${i}-1" onclick="markWinner(${i}, 1)">B팀 승</button>
                         </div>
                     </div>
                 </div>`;
@@ -100,36 +91,31 @@
     }
 
     function refreshSelects() {
-        const opts = '<option value="">선수</option>' + players.map(p => `<option value="${p.name}">${p.name}(${p.seed})</option>`).join('');
+        const opts = '<option value="">선택</option>' + players.map(p => `<option value="${p.name}">${p.name}(${p.seed})</option>`).join('');
         document.querySelectorAll('select').forEach(s => { const val = s.value; s.innerHTML = opts; s.value = val; });
     }
 
     function confirmAndSave() {
-        if(winners.every(w => w === null)) return alert("결과가 없습니다.");
+        if(winners.every(w => w === null)) return alert("결과를 선택해주세요!");
+        if(!confirm("합산하시겠습니까?")) return;
         for(let i=1; i<=6; i++) {
             if(winners[i-1] === null) continue;
-            const t0 = [1,2,3,4].map(p => document.getElementById(`s${i}-t0-p${p}`).value).filter(n => n);
-            const t1 = [1,2,3,4].map(p => document.getElementById(`s${i}-t1-p${p}`).value).filter(n => n);
+            const t0 = [1,2].map(p => document.getElementById(`s${i}-t0-p${p}`).value).filter(n => n);
+            const t1 = [1,2].map(p => document.getElementById(`s${i}-t1-p${p}`).value).filter(n => n);
             const winTeam = winners[i-1] === 0 ? t0 : t1;
             const lossTeam = winners[i-1] === 0 ? t1 : t0;
             winTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.wins++; });
             lossTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.losses++; });
         }
-        renderRank();
-        alert("저장되었습니다.");
+        localStorage.setItem('kok-mobile-v1', JSON.stringify(players));
         location.reload();
     }
 
     function renderRank() {
-        players.sort((a, b) => b.wins - a.wins);
-        document.getElementById('rankBody').innerHTML = players.map((p, i) => `
-            <tr><td>${i+1}</td><td><strong>${p.name}</strong> <small>(${p.seed})</small></td><td style="color:green">${p.wins}</td><td>${p.losses}</td></tr>
+        const sorted = [...players].sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+        document.getElementById('rankBody').innerHTML = sorted.map((p, i) => `
+            <tr><td>${i+1}</td><td><strong>${p.name}</strong></td><td style="color:#2ecc71; font-weight:bold;">${p.wins}</td><td>${p.losses}</td></tr>
         `).join('');
-        localStorage.setItem('kok-final-v3', JSON.stringify(players));
-    }
-
-    function resetData() {
-        if(confirm("초기화하시겠습니까?")) { localStorage.removeItem('kok-final-v3'); location.reload(); }
     }
 
     initBoard();
