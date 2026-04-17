@@ -5,44 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>콕끼리 전적판</title>
     <style>
-        :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; }
-        body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 80px; }
+        :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; }
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 90px; }
         .wrapper { display: flex; flex-direction: column; gap: 15px; }
-        .card { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .card { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-height: 300px; }
+        
+        /* 상단 탭 스티키 */
+        .tab-container { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 10px; position: sticky; top: 0; background: var(--bg); z-index: 10; padding-top: 5px; -webkit-overflow-scrolling: touch; }
+        .tab-btn { padding: 10px 12px; border-radius: 10px; border: 1px solid #ddd; background: white; white-space: nowrap; cursor: pointer; font-weight: bold; font-size: 12px; flex-shrink: 0; }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .tab-btn.result-tab.active { background: var(--result); border-color: var(--result); }
+
+        .set-content { display: none; }
+        .set-content.active { display: block; }
+
         h2 { font-size: 1.1rem; margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; }
         h2::before { content: ''; width: 4px; height: 18px; background: var(--primary); border-radius: 2px; display: inline-block; }
-        .set-row { border: 1px solid #eee; border-radius: 15px; padding: 15px; margin-bottom: 15px; background: #fff; }
-        .set-label { font-weight: 800; color: var(--primary); font-size: 0.9rem; margin-bottom: 10px; display: block; }
+        .result-title::before { background: var(--result); }
+        
         .team-container { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .team-area { padding: 8px; border-radius: 12px; background: #f9f9f9; border: 2px solid transparent; }
         .team-area.selected { background: #eafaf1; border-color: var(--win); }
+        
         .player-input { width: 100%; padding: 8px 5px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 4px; font-size: 12px; box-sizing: border-box; }
         .record-btn { width: 100%; padding: 12px 0; border: 1px solid #ccc; border-radius: 8px; background: white; cursor: pointer; font-size: 0.8rem; font-weight: bold; color: #888; margin-top: 5px; }
         .record-btn.active { background: var(--win); color: white; border-color: var(--win); }
+        
         .apply-all { width: calc(100% - 20px); padding: 18px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; position: fixed; bottom: 10px; left: 10px; z-index: 100; }
-        .rank-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .rank-table th { padding: 8px; border-bottom: 2px solid #eee; color: #7f8c8d; }
-        .rank-table td { padding: 10px 5px; text-align: center; border-bottom: 1px solid #f9f9f9; }
+        
+        .rank-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
+        .rank-table th { padding: 10px; border-bottom: 2px solid #eee; color: #7f8c8d; background: #fafafa; }
+        .rank-table td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #f2f2f2; }
+        
+        .reset-box { margin-top: 30px; text-align: right; }
+        .reset-btn { background: #eee; border: none; padding: 8px 12px; border-radius: 5px; font-size: 11px; color: #999; }
     </style>
 </head>
 <body>
 
 <div class="wrapper">
-    <div class="card">
-        <h2>🏸 경기 결과 기록 (8인 경기)</h2>
-        <div id="matchContainer"></div>
-    </div>
+    <div class="tab-container" id="tabContainer"></div>
 
-    <div class="card" style="margin-bottom: 20px;">
-        <h2>🏆 실시간 순위</h2>
-        <table class="rank-table">
-            <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th></tr></thead>
-            <tbody id="rankBody"></tbody>
-        </table>
+    <div class="card">
+        <div id="matchContainer"></div>
+        
+        <div id="set-page-7" class="set-content">
+            <h2 class="result-title">🏆 실시간 순위 현황</h2>
+            <table class="rank-table">
+                <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th></tr></thead>
+                <tbody id="rankBody"></tbody>
+            </table>
+            <div class="reset-box">
+                <button class="reset-btn" onclick="resetData()">전체 데이터 초기화</button>
+            </div>
+        </div>
     </div>
 </div>
 
-<button class="apply-all" onclick="confirmAndSave()">전적 합산하기</button>
+<button class="apply-all" id="actionBtn" onclick="confirmAndSave()">전적 합산하기</button>
 
 <datalist id="playerList"></datalist>
 
@@ -59,19 +79,28 @@
         {name: "무지", seed: "E-"}, {name: "완태", seed: "E-"}, {name: "루피", seed: "E-"}
     ].map(p => ({...p, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-mobile-v3')) || initialPlayers;
+    let players = JSON.parse(localStorage.getItem('kok-v5')) || initialPlayers;
     let winners = Array(6).fill(null);
 
     function initBoard() {
-        const container = document.getElementById('matchContainer');
-        const dl = document.getElementById('playerList');
-        dl.innerHTML = players.map(p => `<option value="${p.name}"></option>`).join('');
+        const tabBox = document.getElementById('tabContainer');
+        const matchBox = document.getElementById('matchContainer');
+        document.getElementById('playerList').innerHTML = players.map(p => `<option value="${p.name}"></option>`).join('');
 
-        let html = '';
-        for(let i=1; i<=6; i++) {
-            html += `
-                <div class="set-row">
-                    <span class="set-label">SET ${i}</span>
+        for(let i=1; i<=7; i++) {
+            const btn = document.createElement('button');
+            btn.className = `tab-btn ${i===1?'active':''} ${i===7?'result-tab':''}`;
+            btn.id = `tab${i}`;
+            btn.innerText = i === 7 ? '📊 결과확인' : `${i}대전`;
+            btn.onclick = () => showTab(i);
+            tabBox.appendChild(btn);
+
+            if(i < 7) {
+                const content = document.createElement('div');
+                content.className = `set-content ${i===1?'active':''}`;
+                content.id = `set-page-${i}`;
+                content.innerHTML = `
+                    <h2>🏸 ${i}대전 기록</h2>
                     <div class="team-container">
                         <div class="team-area" id="set${i}-t0">
                             ${[1,2,3,4].map(p => `<input class="player-input" list="playerList" id="s${i}-t0-p${p}" placeholder="A팀${p}">`).join('')}
@@ -82,9 +111,22 @@
                             <button class="record-btn" id="btn${i}-1" onclick="markWinner(${i}, 1)">B팀 승</button>
                         </div>
                     </div>
-                </div>`;
+                `;
+                matchBox.appendChild(content);
+            }
         }
-        container.innerHTML = html;
+        renderRank();
+    }
+
+    function showTab(num) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.set-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`tab${num}`).classList.add('active');
+        document.getElementById(`set-page-${num}`).classList.add('active');
+        
+        // 결과창에서는 하단 버튼 숨기기
+        const btn = document.getElementById('actionBtn');
+        btn.style.display = num === 7 ? 'none' : 'block';
     }
 
     function markWinner(setNum, teamIdx) {
@@ -96,22 +138,23 @@
     }
 
     function confirmAndSave() {
-        if(winners.every(w => w === null)) return alert("결과를 선택해주세요!");
-        if(!confirm("전적을 합산하시겠습니까?")) return;
+        if(winners.every(w => w === null)) return alert("결과를 선택한 대전이 없습니다.");
+        if(!confirm("입력한 대전의 결과를 합산하시겠습니까?")) return;
         
         for(let i=1; i<=6; i++) {
             if(winners[i-1] === null) continue;
             const t0 = [1,2,3,4].map(p => document.getElementById(`s${i}-t0-p${p}`).value.trim()).filter(n => n);
             const t1 = [1,2,3,4].map(p => document.getElementById(`s${i}-t1-p${p}`).value.trim()).filter(n => n);
-            
             const winTeam = winners[i-1] === 0 ? t0 : t1;
             const lossTeam = winners[i-1] === 0 ? t1 : t0;
             
             winTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.wins++; });
             lossTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.losses++; });
         }
-        localStorage.setItem('kok-mobile-v3', JSON.stringify(players));
-        location.reload();
+        localStorage.setItem('kok-v5', JSON.stringify(players));
+        alert("합산되었습니다! 결과 확인 탭으로 이동합니다.");
+        showTab(7);
+        renderRank();
     }
 
     function renderRank() {
@@ -121,9 +164,14 @@
         `).join('');
     }
 
+    function resetData() {
+        if(confirm("모든 승패 기록을 초기화하시겠습니까?")) {
+            localStorage.removeItem('kok-v5');
+            location.reload();
+        }
+    }
+
     initBoard();
-    renderRank();
 </script>
 </body>
-</html>
 </html>
