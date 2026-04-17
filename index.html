@@ -1,66 +1,61 @@
-<!DOCTYPE html>
+메모장 기능은 깔끔하게 제거하고, 요청하신 대로 코끼리 이모티콘($\text{🐘}$)을 곳곳에 배치해 디자인을 다듬었습니다.6대전 × 6코트 시스템을 유지하면서, 각 대전과 코트를 옮겨 다니며 팀당 4명(총 8명)을 검색해서 입력하고 승패를 기록할 수 있는 최종 코드입니다.HTML<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>콕끼리 전적판</title>
+    <title>🐘 콕끼리 전적판</title>
     <style>
         :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 90px; }
-        .wrapper { display: flex; flex-direction: column; gap: 15px; }
         .card { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         
-        .tab-container { display: flex; gap: 5px; position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 5px 0 10px 0; }
-        .tab-btn { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #ddd; background: white; cursor: pointer; font-weight: bold; font-size: 14px; }
-        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .tab-btn.result-tab.active { background: var(--result); border-color: var(--result); }
+        .round-tabs { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0 10px; position: sticky; top: 0; background: var(--bg); z-index: 20; -webkit-overflow-scrolling: touch; }
+        .r-btn { padding: 10px 15px; border-radius: 10px; border: 1px solid #ddd; background: white; white-space: nowrap; font-weight: bold; flex-shrink: 0; }
+        .r-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
+        .r-btn.res-tab.active { background: var(--result); border-color: var(--result); }
 
-        .set-content { display: none; }
-        .set-content.active { display: block; }
+        .court-tabs { display: flex; gap: 4px; margin-bottom: 15px; overflow-x: auto; }
+        .c-btn { flex: 1; padding: 8px 0; border-radius: 8px; border: 1px solid #eee; background: #fff; font-size: 11px; color: #777; font-weight: bold; min-width: 50px; }
+        .c-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        .court-row { border: 1px solid #eee; border-radius: 15px; padding: 15px; margin-bottom: 20px; background: #fff; }
-        .court-label { font-weight: 800; color: var(--primary); font-size: 1rem; margin-bottom: 12px; display: block; }
-        
-        .team-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .team-area { padding: 10px; border-radius: 12px; background: #f9f9f9; border: 2px solid transparent; }
+        .page-content { display: none; }
+        .page-content.active { display: block; }
+        .court-content { display: none; }
+        .court-content.active { display: block; }
+
+        h2 { font-size: 1.1rem; margin: 0 0 10px 0; display: flex; align-items: center; gap: 5px; }
+        .team-container { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .team-area { padding: 8px; border-radius: 12px; background: #f9f9f9; border: 2px solid transparent; }
         .team-area.selected { background: #eafaf1; border-color: var(--win); }
         
-        .player-input { width: 100%; padding: 10px 5px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 5px; font-size: 13px; box-sizing: border-box; }
-        .team-memo { width: 100%; height: 80px; padding: 8px; border-radius: 8px; border: 1px solid #eee; margin: 8px 0; font-size: 12px; resize: none; box-sizing: border-box; }
-        
-        .record-btn { width: 100%; padding: 15px 0; border: 1px solid #ccc; border-radius: 10px; background: white; cursor: pointer; font-size: 0.9rem; font-weight: bold; color: #888; }
+        .player-input { width: 100%; padding: 8px 5px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 4px; font-size: 12px; box-sizing: border-box; }
+        .record-btn { width: 100%; padding: 12px 0; border: 1px solid #ccc; border-radius: 8px; background: white; font-size: 0.8rem; font-weight: bold; color: #888; margin-top: 5px; }
         .record-btn.active { background: var(--win); color: white; border-color: var(--win); }
         
         .apply-all { width: calc(100% - 20px); padding: 18px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; position: fixed; bottom: 10px; left: 10px; z-index: 100; }
-        
-        .rank-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        .rank-table th { padding: 12px; border-bottom: 2px solid #eee; background: #fafafa; }
-        .rank-table td { padding: 12px; text-align: center; border-bottom: 1px solid #f2f2f2; }
+        .rank-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .rank-table th { padding: 10px; border-bottom: 2px solid #eee; background: #fafafa; }
+        .rank-table td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #f2f2f2; }
     </style>
 </head>
 <body>
 
-<div class="wrapper">
-    <div class="tab-container">
-        <button class="tab-btn active" id="tab1" onclick="showTab(1)">🏸 경기 기록 (6코트)</button>
-        <button class="tab-btn result-tab" id="tab2" onclick="showTab(2)">📊 결과 확인</button>
-    </div>
+<div class="round-tabs" id="roundTabs"></div>
 
-    <div class="card" id="page1">
-        <div id="courtContainer"></div>
-    </div>
-
-    <div class="card set-content" id="page2">
-        <h2 style="color: var(--result)">🏆 전체 순위</h2>
+<div class="card">
+    <div id="mainContainer"></div>
+    
+    <div id="page-7" class="page-content">
+        <h2 style="color:var(--result)">🏆 전체 순위 🐘</h2>
         <table class="rank-table">
             <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th></tr></thead>
             <tbody id="rankBody"></tbody>
         </table>
-        <button onclick="resetData()" style="margin-top:30px; width:100%; padding:10px; background:#eee; border:none; border-radius:10px; color:#999;">전체 초기화</button>
+        <button onclick="if(confirm('모든 데이터를 초기화할까요?')) {localStorage.clear(); location.reload();}" style="margin-top:20px; width:100%; padding:10px; border:none; border-radius:10px; color:#999; background:#eee;">🐘 데이터 전체 초기화</button>
     </div>
 </div>
 
-<button class="apply-all" id="actionBtn" onclick="confirmAndSave()">전체 코트 결과 합산</button>
+<button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
 
 <datalist id="playerList"></datalist>
 
@@ -74,72 +69,103 @@
         {name: "슝슝이", seed: "C"}, {name: "솔찬", seed: "C"}, {name: "새로", seed: "C"},
         {name: "따순", seed: "C"}, {name: "곽동칠", seed: "C"}, {name: "죠스", seed: "D"},
         {name: "동구", seed: "D"}, {name: "란지", seed: "D"}, {name: "리버", seed: "E+"},
-        {name: "무지", seed: "E-"}, {name: "완태", seed: "E-"}, {name: "루피", seed: "E-"}
+        {name: "무지", seed: "E-"}, {name: "완태", seed: "E-"}, {name: "루피", seed: "E-"},
+        {name: "선수28", seed: "E"}, {name: "선수29", seed: "E"}, {name: "선수30", seed: "E"}
     ].map(p => ({...p, wins: 0, losses: 0}));
 
-    const STORAGE_KEY = 'kok-v7-6courts';
-    let players = JSON.parse(localStorage.getItem(STORAGE_KEY)) || initialPlayers;
-    let winners = Array(6).fill(null);
+    let players = JSON.parse(localStorage.getItem('kok-final-v2')) || initialPlayers;
+    let winners = {}; 
 
-    function initBoard() {
-        const container = document.getElementById('courtContainer');
-        document.getElementById('playerList').innerHTML = players.map(p => `<option value="${p.name}"></option>`).join('');
+    function init() {
+        const rTabs = document.getElementById('roundTabs');
+        const main = document.getElementById('mainContainer');
+        document.getElementById('playerList').innerHTML = players.map(p => `<option value="${p.name}">`).join('');
 
-        let html = '';
-        for(let i=1; i<=6; i++) {
-            html += `
-                <div class="court-row">
-                    <span class="court-label">📍 ${i}번 코트</span>
-                    <div class="team-container">
-                        <div class="team-area" id="c${i}-t0">
-                            ${[1,2,3,4].map(p => `<input class="player-input" list="playerList" id="c${i}-t0-p${p}" placeholder="A팀 선수${p}">`).join('')}
-                            <textarea class="team-memo" placeholder="A팀 메모"></textarea>
-                            <button class="record-btn" id="btn${i}-0" onclick="markWinner(${i}, 0)">A팀 승</button>
-                        </div>
-                        <div class="team-area" id="c${i}-t1">
-                            ${[1,2,3,4].map(p => `<input class="player-input" list="playerList" id="c${i}-t1-p${p}" placeholder="B팀 선수${p}">`).join('')}
-                            <textarea class="team-memo" placeholder="B팀 메모"></textarea>
-                            <button class="record-btn" id="btn${i}-1" onclick="markWinner(${i}, 1)">B팀 승</button>
-                        </div>
-                    </div>
-                </div>`;
+        for(let r=1; r<=7; r++) {
+            const btn = document.createElement('button');
+            btn.className = `r-btn ${r===1?'active':''} ${r===7?'res-tab':''}`;
+            btn.id = `rbtn${r}`;
+            btn.innerText = r === 7 ? '📊 결과확인' : `🐘 ${r}대전`;
+            btn.onclick = () => showRound(r);
+            rTabs.appendChild(btn);
+
+            if(r < 7) {
+                const rPage = document.createElement('div');
+                rPage.className = `page-content ${r===1?'active':''}`;
+                rPage.id = `page-${r}`;
+                
+                let courtBtns = `<div class="court-tabs">`;
+                for(let c=1; c<=6; c++) {
+                    courtBtns += `<button class="c-btn ${c===1?'active':''}" id="cbtn-${r}-${c}" onclick="showCourt(${r}, ${c})">${c}코트</button>`;
+                }
+                courtBtns += `</div>`;
+
+                let courtContents = '';
+                for(let c=1; c<=6; c++) {
+                    courtContents += `
+                        <div class="court-content ${c===1?'active':''}" id="court-${r}-${c}">
+                            <h2>🏸 ${r}대전 - ${c}코트 🐘</h2>
+                            <div class="team-container">
+                                <div class="team-area" id="area-${r}-${c}-t0">
+                                    ${[1,2,3,4].map(p => `<input class="player-input" list="playerList" id="in-${r}-${c}-t0-p${p}" placeholder="A팀-${p}">`).join('')}
+                                    <button class="record-btn" id="btn-${r}-${c}-0" onclick="markWinner(${r},${c},0)">A팀 승</button>
+                                </div>
+                                <div class="team-area" id="area-${r}-${c}-t1">
+                                    ${[1,2,3,4].map(p => `<input class="player-input" list="playerList" id="in-${r}-${c}-t1-p${p}" placeholder="B팀-${p}">`).join('')}
+                                    <button class="record-btn" id="btn-${r}-${c}-1" onclick="markWinner(${r},${c},1)">B팀 승</button>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+                rPage.innerHTML = courtBtns + courtContents;
+                main.appendChild(rPage);
+            }
         }
-        container.innerHTML = html;
         renderRank();
     }
 
-    function showTab(num) {
-        document.getElementById('page1').style.display = num === 1 ? 'block' : 'none';
-        document.getElementById('page2').classList.toggle('active', num === 2);
-        document.getElementById('tab1').classList.toggle('active', num === 1);
-        document.getElementById('tab2').classList.toggle('active', num === 2);
-        document.getElementById('actionBtn').style.display = num === 1 ? 'block' : 'none';
+    function showRound(r) {
+        document.querySelectorAll('.r-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+        document.getElementById(`rbtn${r}`).classList.add('active');
+        document.getElementById(`page-${r}`).classList.add('active');
+        document.getElementById('saveBtn').style.display = r === 7 ? 'none' : 'block';
     }
 
-    function markWinner(courtIdx, teamIdx) {
-        winners[courtIdx-1] = teamIdx;
-        [0,1].forEach(t => {
-            document.getElementById(`btn${courtIdx}-${t}`).classList.toggle('active', teamIdx === t);
-            document.getElementById(`c${courtIdx}-t${t}`).classList.toggle('selected', teamIdx === t);
-        });
+    function showCourt(r, c) {
+        document.querySelectorAll(`#page-${r} .c-btn`).forEach(b => b.classList.remove('active'));
+        document.querySelectorAll(`#page-${r} .court-content`).forEach(cc => cc.classList.remove('active'));
+        document.getElementById(`cbtn-${r}-${c}`).classList.add('active');
+        document.getElementById(`court-${r}-${c}`).classList.add('active');
+    }
+
+    function markWinner(r, c, team) {
+        winners[`${r}-${c}`] = team;
+        document.getElementById(`btn-${r}-${c}-0`).classList.toggle('active', team === 0);
+        document.getElementById(`btn-${r}-${c}-1`).classList.toggle('active', team === 1);
+        document.getElementById(`area-${r}-${c}-t0`).classList.toggle('selected', team === 0);
+        document.getElementById(`area-${r}-${c}-t1`).classList.toggle('selected', team === 1);
     }
 
     function confirmAndSave() {
-        if(winners.every(w => w === null)) return alert("결과를 선택한 코트가 없습니다.");
-        if(!confirm("모든 코트의 결과를 합산하시겠습니까?")) return;
-        
-        for(let i=1; i<=6; i++) {
-            if(winners[i-1] === null) continue;
-            const t0 = [1,2,3,4].map(p => document.getElementById(`c${i}-t0-p${p}`).value.trim()).filter(n => n);
-            const t1 = [1,2,3,4].map(p => document.getElementById(`c${i}-t1-p${p}`).value.trim()).filter(n => n);
-            const winTeam = winners[i-1] === 0 ? t0 : t1;
-            const lossTeam = winners[i-1] === 0 ? t1 : t0;
+        if(Object.keys(winners).length === 0) return alert("결과를 선택해주세요 🐘");
+        if(!confirm("모든 경기의 전적을 합산할까요? 🐘")) return;
+
+        for(let key in winners) {
+            const [r, c] = key.split('-');
+            const winIdx = winners[key];
+            const t0 = [1,2,3,4].map(p => document.getElementById(`in-${r}-${c}-t0-p${p}`).value.trim()).filter(n => n);
+            const t1 = [1,2,3,4].map(p => document.getElementById(`in-${r}-${c}-t1-p${p}`).value.trim()).filter(n => n);
+            
+            const winTeam = winIdx === 0 ? t0 : t1;
+            const lossTeam = winIdx === 0 ? t1 : t0;
             
             winTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.wins++; });
             lossTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.losses++; });
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(players));
-        showTab(2);
+        localStorage.setItem('kok-final-v2', JSON.stringify(players));
+        alert("합산 완료! 🐘");
+        showRound(7);
         renderRank();
     }
 
@@ -150,11 +176,7 @@
         `).join('');
     }
 
-    function resetData() {
-        if(confirm("정말 초기화할까요?")) { localStorage.removeItem(STORAGE_KEY); location.reload(); }
-    }
-
-    initBoard();
+    init();
 </script>
 </body>
 </html>
