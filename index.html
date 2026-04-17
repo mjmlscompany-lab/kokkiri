@@ -16,13 +16,9 @@
         .team-container { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .team-area { padding: 8px; border-radius: 12px; background: #f9f9f9; border: 2px solid transparent; }
         .team-area.selected { background: #eafaf1; border-color: var(--win); }
-        
-        /* 검색 입력창 스타일 */
-        .player-input { width: 100%; padding: 10px 5px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 4px; font-size: 13px; box-sizing: border-box; }
-        
+        .player-input { width: 100%; padding: 8px 5px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 4px; font-size: 12px; box-sizing: border-box; }
         .record-btn { width: 100%; padding: 12px 0; border: 1px solid #ccc; border-radius: 8px; background: white; cursor: pointer; font-size: 0.8rem; font-weight: bold; color: #888; margin-top: 5px; }
         .record-btn.active { background: var(--win); color: white; border-color: var(--win); }
-        
         .apply-all { width: calc(100% - 20px); padding: 18px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; position: fixed; bottom: 10px; left: 10px; z-index: 100; }
         .rank-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .rank-table th { padding: 8px; border-bottom: 2px solid #eee; color: #7f8c8d; }
@@ -33,7 +29,7 @@
 
 <div class="wrapper">
     <div class="card">
-        <h2>🏸 경기 결과 기록 (4인 복식)</h2>
+        <h2>🏸 경기 결과 기록 (8인 경기)</h2>
         <div id="matchContainer"></div>
     </div>
 
@@ -63,7 +59,7 @@
         {name: "무지", seed: "E-"}, {name: "완태", seed: "E-"}, {name: "루피", seed: "E-"}
     ].map(p => ({...p, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-mobile-v2')) || initialPlayers;
+    let players = JSON.parse(localStorage.getItem('kok-mobile-v3')) || initialPlayers;
     let winners = Array(6).fill(null);
 
     function initBoard() {
@@ -78,11 +74,11 @@
                     <span class="set-label">SET ${i}</span>
                     <div class="team-container">
                         <div class="team-area" id="set${i}-t0">
-                            ${[1,2].map(p => `<input class="player-input" list="playerList" id="s${i}-t0-p${p}" placeholder="선수 ${p}">`).join('')}
+                            ${[1,2,3,4].map(p => `<input class="player-input" list="playerList" id="s${i}-t0-p${p}" placeholder="A팀${p}">`).join('')}
                             <button class="record-btn" id="btn${i}-0" onclick="markWinner(${i}, 0)">A팀 승</button>
                         </div>
                         <div class="team-area" id="set${i}-t1">
-                            ${[1,2].map(p => `<input class="player-input" list="playerList" id="s${i}-t1-p${p}" placeholder="선수 ${p}">`).join('')}
+                            ${[1,2,3,4].map(p => `<input class="player-input" list="playerList" id="s${i}-t1-p${p}" placeholder="B팀${p}">`).join('')}
                             <button class="record-btn" id="btn${i}-1" onclick="markWinner(${i}, 1)">B팀 승</button>
                         </div>
                     </div>
@@ -101,12 +97,12 @@
 
     function confirmAndSave() {
         if(winners.every(w => w === null)) return alert("결과를 선택해주세요!");
-        if(!confirm("합산하시겠습니까?")) return;
+        if(!confirm("전적을 합산하시겠습니까?")) return;
         
         for(let i=1; i<=6; i++) {
             if(winners[i-1] === null) continue;
-            const t0 = [1,2].map(p => document.getElementById(`s${i}-t0-p${p}`).value.trim()).filter(n => n);
-            const t1 = [1,2].map(p => document.getElementById(`s${i}-t1-p${p}`).value.trim()).filter(n => n);
+            const t0 = [1,2,3,4].map(p => document.getElementById(`s${i}-t0-p${p}`).value.trim()).filter(n => n);
+            const t1 = [1,2,3,4].map(p => document.getElementById(`s${i}-t1-p${p}`).value.trim()).filter(n => n);
             
             const winTeam = winners[i-1] === 0 ? t0 : t1;
             const lossTeam = winners[i-1] === 0 ? t1 : t0;
@@ -114,7 +110,7 @@
             winTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.wins++; });
             lossTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.losses++; });
         }
-        localStorage.setItem('kok-mobile-v2', JSON.stringify(players));
+        localStorage.setItem('kok-mobile-v3', JSON.stringify(players));
         location.reload();
     }
 
@@ -129,4 +125,5 @@
     renderRank();
 </script>
 </body>
+</html>
 </html>
