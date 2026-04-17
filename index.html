@@ -6,7 +6,7 @@
     <title>콕끼리 전적판</title>
     <style>
         :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; }
-        body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); }
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 80px; }
         .wrapper { display: flex; flex-direction: column; gap: 15px; }
         .card { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         h2 { font-size: 1.1rem; margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; }
@@ -19,7 +19,7 @@
         select { width: 100%; padding: 12px 5px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 5px; font-size: 14px; appearance: none; background: white; }
         .record-btn { width: 100%; padding: 12px 0; border: 1px solid #ccc; border-radius: 8px; background: white; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: #888; }
         .record-btn.active { background: var(--win); color: white; border-color: var(--win); box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3); }
-        .apply-all { width: 100%; padding: 18px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; position: sticky; bottom: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); }
+        .apply-all { width: calc(100% - 20px); padding: 18px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: bold; position: fixed; bottom: 10px; left: 10px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 100; }
         .rank-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         .rank-table th { padding: 10px; border-bottom: 2px solid #eee; color: #7f8c8d; }
         .rank-table td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #f9f9f9; }
@@ -29,15 +29,16 @@
 
 <div class="wrapper">
     <div class="card">
+        <h2>🏸 경기 결과 기록</h2>
+        <div id="matchContainer"></div>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px;">
         <h2>🏆 실시간 순위</h2>
         <table class="rank-table">
             <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th></tr></thead>
             <tbody id="rankBody"></tbody>
         </table>
-    </div>
-    <div class="card">
-        <h2>🏸 경기 결과 기록</h2>
-        <div id="matchContainer"></div>
     </div>
 </div>
 
