@@ -40,7 +40,6 @@
 <body>
 
 <div class="round-tabs" id="roundTabs"></div>
-
 <div id="mainContainer"></div>
 
 <div id="page-6" class="page-content">
@@ -50,16 +49,14 @@
             <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th></tr></thead>
             <tbody id="rankBody"></tbody>
         </table>
-        <button onclick="if(confirm('데이터를 초기화할까요? 🐘')) {localStorage.removeItem('kok-final-v5'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 경기 데이터 초기화</button>
+        <button onclick="if(confirm('데이터를 초기화할까요? 🐘')) {localStorage.removeItem('kok-29-v1'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
 
 <button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
-
 <datalist id="playerList"></datalist>
 
 <script>
-    // 엑셀에서 추출한 명단 반영
     const initialPlayers = [
         {name: "시오", seed: "B+"}, {name: "구구", seed: "B+"}, {name: "C코", seed: "B+"},
         {name: "로토", seed: "B"}, {name: "백구", seed: "B"}, {name: "야키", seed: "B"},
@@ -69,10 +66,11 @@
         {name: "따순", seed: "C"}, {name: "제리", seed: "C"}, {name: "후니", seed: "C"},
         {name: "쿠쿠", seed: "D+"}, {name: "곽동칠", seed: "D"}, {name: "동구", seed: "D"},
         {name: "우민", seed: "D"}, {name: "란지", seed: "D"}, {name: "리버", seed: "D"},
-        {name: "무지", seed: "E"}, {name: "완태", seed: "E"}, {name: "루피", seed: "E"}
+        {name: "무지", seed: "E+"}, {name: "죠스", seed: "E+"}, {name: "루피", seed: "E+"},
+        {name: "완태", seed: "E"}, {name: "동이", seed: "E"}
     ].map(p => ({...p, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-final-v5')) || initialPlayers;
+    let players = JSON.parse(localStorage.getItem('kok-29-v1')) || initialPlayers;
     let winners = {}; 
 
     function init() {
@@ -92,7 +90,6 @@
                 const rPage = document.createElement('div');
                 rPage.className = `page-content ${r===1?'active':''}`;
                 rPage.id = `page-${r}`;
-                
                 let courtGrid = `<div class="court-grid">`;
                 for(let c=1; c<=6; c++) {
                     courtGrid += `
@@ -136,23 +133,20 @@
     }
 
     function confirmAndSave() {
-        if(Object.keys(winners).length === 0) return alert("입력된 결과가 없습니다 🐘");
-        if(!confirm("현재 대진의 전적을 합산할까요? 🐘")) return;
-
+        if(Object.keys(winners).length === 0) return alert("결과가 없습니다 🐘");
+        if(!confirm("합산하시겠습니까? 🐘")) return;
         for(let key in winners) {
             const [r, c] = key.split('-');
             const winIdx = winners[key];
             const t0 = [1,2,3,4].map(p => document.getElementById(`in-${r}-${c}-t0-p${p}`).value.trim()).filter(n => n);
             const t1 = [1,2,3,4].map(p => document.getElementById(`in-${r}-${c}-t1-p${p}`).value.trim()).filter(n => n);
-            
             const winTeam = winIdx === 0 ? t0 : t1;
             const lossTeam = winIdx === 0 ? t1 : t0;
-            
             winTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.wins++; });
             lossTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.losses++; });
         }
-        localStorage.setItem('kok-final-v5', JSON.stringify(players));
-        alert("합산 완료! 결과 페이지로 이동합니다 🐘");
+        localStorage.setItem('kok-29-v1', JSON.stringify(players));
+        alert("합산 완료! 🐘");
         showRound(6);
         renderRank();
     }
@@ -163,7 +157,6 @@
             <tr><td>${i+1}</td><td><strong>${p.name}</strong> <small>(${p.seed})</small></td><td style="color:#2ecc71; font-weight:bold;">${p.wins}</td><td>${p.losses}</td></tr>
         `).join('');
     }
-
     init();
 </script>
 </body>
