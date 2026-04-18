@@ -8,7 +8,6 @@
         :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 90px; }
         
-        /* 대전 선택 탭 (고정) */
         .round-tabs { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0 10px; position: sticky; top: 0; background: var(--bg); z-index: 100; }
         .r-btn { padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd; background: white; white-space: nowrap; font-weight: bold; flex: 1; min-width: 80px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .r-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
@@ -17,22 +16,21 @@
         .page-content { display: none; }
         .page-content.active { display: block; }
 
-        /* 코트 카드 그리드 설정 (태블릿/PC 대응) */
         .court-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        @media (min-width: 768px) { .court-grid { grid-template-columns: 1fr 1fr; } } /* 태블릿에선 2열 배치 */
+        @media (min-width: 768px) { .court-grid { grid-template-columns: 1fr 1fr; } }
 
         .court-card { background: white; border-radius: 18px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid #eee; }
         .court-title { font-size: 1rem; font-weight: 800; color: var(--primary); margin-bottom: 12px; border-bottom: 2px solid #f0f7ff; padding-bottom: 8px; display: flex; align-items: center; gap: 5px; }
         
         .team-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .team-area { padding: 10px; border-radius: 12px; background: #fafafa; border: 2px solid #f0f0f0; transition: 0.2s; }
+        .team-area { padding: 10px; border-radius: 12px; background: #fafafa; border: 2px solid #f0f0f0; }
         .team-area.selected { background: #eafaf1; border-color: var(--win); }
         
         .player-input { width: 100%; padding: 10px 5px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 5px; font-size: 14px; box-sizing: border-box; }
         .record-btn { width: 100%; padding: 12px 0; border: 1px solid #ccc; border-radius: 10px; background: white; font-size: 0.85rem; font-weight: bold; color: #888; margin-top: 8px; cursor: pointer; }
         .record-btn.active { background: var(--win); color: white; border-color: var(--win); }
         
-        .apply-all { width: calc(100% - 20px); max-width: 500px; padding: 20px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.2rem; font-weight: bold; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 200; box-shadow: 0 5px 20px rgba(0,0,0,0.3); cursor: pointer; }
+        .apply-all { width: calc(100% - 20px); max-width: 500px; padding: 20px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.2rem; font-weight: bold; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 200; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
         
         .rank-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: white; border-radius: 15px; overflow: hidden; }
         .rank-table th { padding: 15px; border-bottom: 2px solid #eee; background: #fafafa; }
@@ -45,14 +43,14 @@
 
 <div id="mainContainer"></div>
 
-<div id="page-7" class="page-content">
+<div id="page-6" class="page-content">
     <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-        <h2 style="color:var(--result); margin-top:0; display:flex; align-items:center; gap:8px;">🏆 실시간 순위 현황 🐘</h2>
+        <h2 style="color:var(--result); margin-top:0;">🏆 실시간 순위 현황 🐘</h2>
         <table class="rank-table">
             <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th></tr></thead>
             <tbody id="rankBody"></tbody>
         </table>
-        <button onclick="if(confirm('데이터를 초기화할까요? 🐘')) {localStorage.clear(); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 모든 경기 데이터 초기화</button>
+        <button onclick="if(confirm('데이터를 초기화할까요? 🐘')) {localStorage.removeItem('kok-final-v5'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 경기 데이터 초기화</button>
     </div>
 </div>
 
@@ -61,20 +59,20 @@
 <datalist id="playerList"></datalist>
 
 <script>
+    // 엑셀에서 추출한 명단 반영
     const initialPlayers = [
-        {name: "시오", seed: "A"}, {name: "C코", seed: "A"}, {name: "로토", seed: "B+"}, 
-        {name: "뉴키", seed: "B+"}, {name: "야키", seed: "B0"}, {name: "구름", seed: "B0"},
-        {name: "제리", seed: "B0"}, {name: "백구", seed: "B0"}, {name: "데식", seed: "B0"},
-        {name: "단우", seed: "B0"}, {name: "구구", seed: "B0"}, {name: "후니", seed: "C"},
-        {name: "현이", seed: "C"}, {name: "이름없어요", seed: "C"}, {name: "우민", seed: "C"},
-        {name: "슝슝이", seed: "C"}, {name: "솔찬", seed: "C"}, {name: "새로", seed: "C"},
-        {name: "따순", seed: "C"}, {name: "곽동칠", seed: "C"}, {name: "죠스", seed: "D"},
-        {name: "동구", seed: "D"}, {name: "란지", seed: "D"}, {name: "리버", seed: "E+"},
-        {name: "무지", seed: "E-"}, {name: "완태", seed: "E-"}, {name: "루피", seed: "E-"},
-        {name: "선수28", seed: "E"}, {name: "선수29", seed: "E"}, {name: "선수30", seed: "E"}
+        {name: "시오", seed: "B+"}, {name: "구구", seed: "B+"}, {name: "C코", seed: "B+"},
+        {name: "로토", seed: "B"}, {name: "백구", seed: "B"}, {name: "야키", seed: "B"},
+        {name: "구름", seed: "B"}, {name: "이름", seed: "B"}, {name: "뉴키", seed: "B"},
+        {name: "단우", seed: "C+"}, {name: "슝슝이", seed: "C+"}, {name: "솔찬", seed: "C+"},
+        {name: "새로", seed: "C+"}, {name: "현이", seed: "C"}, {name: "대식", seed: "C"},
+        {name: "따순", seed: "C"}, {name: "제리", seed: "C"}, {name: "후니", seed: "C"},
+        {name: "쿠쿠", seed: "D+"}, {name: "곽동칠", seed: "D"}, {name: "동구", seed: "D"},
+        {name: "우민", seed: "D"}, {name: "란지", seed: "D"}, {name: "리버", seed: "D"},
+        {name: "무지", seed: "E"}, {name: "완태", seed: "E"}, {name: "루피", seed: "E"}
     ].map(p => ({...p, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-final-tablet')) || initialPlayers;
+    let players = JSON.parse(localStorage.getItem('kok-final-v5')) || initialPlayers;
     let winners = {}; 
 
     function init() {
@@ -82,15 +80,15 @@
         const main = document.getElementById('mainContainer');
         document.getElementById('playerList').innerHTML = players.map(p => `<option value="${p.name}">`).join('');
 
-        for(let r=1; r<=7; r++) {
+        for(let r=1; r<=6; r++) {
             const btn = document.createElement('button');
-            btn.className = `r-btn ${r===1?'active':''} ${r===7?'res-tab':''}`;
+            btn.className = `r-btn ${r===1?'active':''} ${r===6?'res-tab':''}`;
             btn.id = `rbtn${r}`;
-            btn.innerText = r === 7 ? '📊 결과확인' : `🐘 ${r}대전`;
+            btn.innerText = r === 6 ? '📊 결과' : `🐘 ${r}대진`;
             btn.onclick = () => showRound(r);
             rTabs.appendChild(btn);
 
-            if(r < 7) {
+            if(r < 6) {
                 const rPage = document.createElement('div');
                 rPage.className = `page-content ${r===1?'active':''}`;
                 rPage.id = `page-${r}`;
@@ -103,11 +101,11 @@
                             <div class="team-container">
                                 <div class="team-area" id="area-${r}-${c}-t0">
                                     ${[1,2,3,4].map(p => `<input class="player-input" list="playerList" id="in-${r}-${c}-t0-p${p}" placeholder="A팀-${p}">`).join('')}
-                                    <button class="record-btn" id="btn-${r}-${c}-0" onclick="markWinner(${r},${c},0)">A팀 승리</button>
+                                    <button class="record-btn" id="btn-${r}-${c}-0" onclick="markWinner(${r},${c},0)">A팀 승</button>
                                 </div>
                                 <div class="team-area" id="area-${r}-${c}-t1">
                                     ${[1,2,3,4].map(p => `<input class="player-input" list="playerList" id="in-${r}-${c}-t1-p${p}" placeholder="B팀-${p}">`).join('')}
-                                    <button class="record-btn" id="btn-${r}-${c}-1" onclick="markWinner(${r},${c},1)">B팀 승리</button>
+                                    <button class="record-btn" id="btn-${r}-${c}-1" onclick="markWinner(${r},${c},1)">B팀 승</button>
                                 </div>
                             </div>
                         </div>`;
@@ -125,7 +123,7 @@
         document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
         document.getElementById(`rbtn${r}`).classList.add('active');
         document.getElementById(`page-${r}`).classList.add('active');
-        document.getElementById('saveBtn').style.display = r === 7 ? 'none' : 'block';
+        document.getElementById('saveBtn').style.display = r === 6 ? 'none' : 'block';
         window.scrollTo(0,0);
     }
 
@@ -139,7 +137,7 @@
 
     function confirmAndSave() {
         if(Object.keys(winners).length === 0) return alert("입력된 결과가 없습니다 🐘");
-        if(!confirm("모든 경기의 전적을 합산할까요? 🐘")) return;
+        if(!confirm("현재 대진의 전적을 합산할까요? 🐘")) return;
 
         for(let key in winners) {
             const [r, c] = key.split('-');
@@ -153,9 +151,9 @@
             winTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.wins++; });
             lossTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.losses++; });
         }
-        localStorage.setItem('kok-final-tablet', JSON.stringify(players));
+        localStorage.setItem('kok-final-v5', JSON.stringify(players));
         alert("합산 완료! 결과 페이지로 이동합니다 🐘");
-        showRound(7);
+        showRound(6);
         renderRank();
     }
 
@@ -169,5 +167,4 @@
     init();
 </script>
 </body>
-</html>
 </html>
