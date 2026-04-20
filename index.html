@@ -32,7 +32,7 @@
         
         .apply-all { width: calc(100% - 20px); max-width: 500px; padding: 20px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.2rem; font-weight: bold; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 200; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
         
-        .rank-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: white; border-radius: 15px; overflow: hidden; }
+        .rank-table { width: 100%; border-collapse: collapse; font-size: 1.05rem; background: white; border-radius: 15px; overflow: hidden; }
         .rank-table th { padding: 15px; border-bottom: 2px solid #eee; background: #fafafa; }
         .rank-table td { padding: 15px 5px; text-align: center; border-bottom: 1px solid #f2f2f2; }
     </style>
@@ -49,7 +49,7 @@
             <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th></tr></thead>
             <tbody id="rankBody"></tbody>
         </table>
-        <button onclick="if(confirm('데이터를 초기화할까요? 🐘')) {localStorage.removeItem('kok-29-v1'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
+        <button onclick="if(confirm('데이터를 초기화할까요? 🐘')) {localStorage.removeItem('kok-29-final'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
 
@@ -57,20 +57,15 @@
 <datalist id="playerList"></datalist>
 
 <script>
+    // 야키 삭제, 아몬드/우지/덕자 추가 반영된 명단
     const initialPlayers = [
-        {name: "시오", seed: "B+"}, {name: "구구", seed: "B+"}, {name: "C코", seed: "B+"},
-        {name: "로토", seed: "B"}, {name: "백구", seed: "B"}, {name: "야키", seed: "B"},
-        {name: "구름", seed: "B"}, {name: "이름", seed: "B"}, {name: "뉴키", seed: "B"},
-        {name: "단우", seed: "C+"}, {name: "슝슝이", seed: "C+"}, {name: "솔찬", seed: "C+"},
-        {name: "새로", seed: "C+"}, {name: "현이", seed: "C"}, {name: "대식", seed: "C"},
-        {name: "따순", seed: "C"}, {name: "제리", seed: "C"}, {name: "후니", seed: "C"},
-        {name: "쿠쿠", seed: "D+"}, {name: "곽동칠", seed: "D"}, {name: "동구", seed: "D"},
-        {name: "우민", seed: "D"}, {name: "란지", seed: "D"}, {name: "리버", seed: "D"},
-        {name: "무지", seed: "E+"}, {name: "죠스", seed: "E+"}, {name: "루피", seed: "E+"},
-        {name: "완태", seed: "E"}, {name: "동이", seed: "E"}
-    ].map(p => ({...p, wins: 0, losses: 0}));
+        "시오", "구구", "C코", "로토", "백구", "구름", "이름", "뉴키", "단우", 
+        "슝슝이", "솔찬", "새로", "현이", "대식", "따순", "제리", "후니", "쿠쿠", 
+        "곽동칠", "동구", "우민", "란지", "리버", "무지", "죠스", "루피", "완태", 
+        "동이", "아몬드", "우지", "덕자"
+    ].map(name => ({name, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-29-v1')) || initialPlayers;
+    let players = JSON.parse(localStorage.getItem('kok-29-final')) || initialPlayers;
     let winners = {}; 
 
     function init() {
@@ -145,7 +140,7 @@
             winTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.wins++; });
             lossTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.losses++; });
         }
-        localStorage.setItem('kok-29-v1', JSON.stringify(players));
+        localStorage.setItem('kok-29-final', JSON.stringify(players));
         alert("합산 완료! 🐘");
         showRound(6);
         renderRank();
@@ -154,7 +149,7 @@
     function renderRank() {
         const sorted = [...players].sort((a, b) => b.wins - a.wins || a.losses - b.losses);
         document.getElementById('rankBody').innerHTML = sorted.map((p, i) => `
-            <tr><td>${i+1}</td><td><strong>${p.name}</strong> <small>(${p.seed})</small></td><td style="color:#2ecc71; font-weight:bold;">${p.wins}</td><td>${p.losses}</td></tr>
+            <tr><td>${i+1}</td><td><strong style="font-size:1.15rem;">${p.name}</strong></td><td style="color:#2ecc71; font-weight:bold;">${p.wins}</td><td>${p.losses}</td></tr>
         `).join('');
     }
     init();
