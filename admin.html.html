@@ -48,31 +48,31 @@
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 파일로 저장하기</button>
-        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-v9-final'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
+        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-v11-woozi'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
 
 <button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
 
 <script>
-    // 명단 및 대진표 데이터 유지
+    // '우지G' 대신 '우지'로 전체 통일
     const schedule = {
         1: [
-            {t0:["대식","우지G"], t1:["제리","동이"]},
+            {t0:["대식","우지"], t1:["제리","동이"]},
             {t0:["쿠쿠","완태"], t1:["극선호(G)","루피"]},
             {t0:["시오","로토"], t1:["구구","C코"]},
             {t0:["백구","슝슝이"], t1:["뉴키","단우"]},
             {t0:["현이","제리"], t1:["대식","따순"]}
         ],
         2: [
-            {t0:["쿠쿠","우지G"], t1:["극선호(G)","동이"]},
+            {t0:["쿠쿠","우지"], t1:["극선호(G)","동이"]},
             {t0:["시오","구구"], t1:["C코","로토"]},
             {t0:["쿠쿠","극선호(G)"], t1:["루피","완태"]},
             {t0:["현이","대식"], t1:["따순","제리"]},
             {t0:["백구","뉴키"], t1:["단우","슝슝이"]}
         ],
         3: [
-            {t0:["루피","우지G"], t1:["완태","동이"]},
+            {t0:["루피","우지"], t1:["완태","동이"]},
             {t0:["시오","C코"], t1:["구구","로토"]},
             {t0:["현이","따순"], t1:["대식","제리"]},
             {t0:["루피","완태"], t1:["동이","우지"]},
@@ -92,12 +92,13 @@
         ]
     };
 
+    // '무지' 제외, '우지'로 통일된 최종 명단
     const initialPlayers = [
-        "대식", "우지G", "제리", "동이", "쿠쿠", "완태", "극선호(G)", "루피", "시오", 
-        "로토", "구구", "C코", "백구", "슝슝이", "뉴키", "단우", "현이", "따순", "우지"
+        "대식", "우지", "제리", "동이", "쿠쿠", "완태", "극선호(G)", "루피", "시오", 
+        "로토", "구구", "C코", "백구", "슝슝이", "뉴키", "단우", "현이", "따순"
     ].map(name => ({name, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-v9-final')) || initialPlayers;
+    let players = JSON.parse(localStorage.getItem('kok-v11-woozi')) || initialPlayers;
     let winners = {}; 
 
     function init() {
@@ -196,7 +197,7 @@
             lossTeam.forEach(n => { if(n !== '불참') { const p = players.find(m => m.name === n); if(p) p.losses++; } });
         }
         
-        localStorage.setItem('kok-v9-final', JSON.stringify(players));
+        localStorage.setItem('kok-v11-woozi', JSON.stringify(players));
         alert("합산 완료!");
         winners = {};
         showRound(6);
