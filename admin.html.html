@@ -45,7 +45,7 @@
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 파일로 저장하기</button>
-        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-guest-match'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
+        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-final-match-v3'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
 
@@ -57,35 +57,34 @@
             {t0:["시오","로토","현이","곽동칠"], t1:["구구","백구","대식","동구"]},
             {t0:["C코","구름","따순","우민"], t1:["아몬드","이름","제리","란지"]},
             {t0:["우지","뉴키","후니","리버"], t1:["덕자","단우","쿠쿠","무지"]},
-            {t0:["슝슝이","죠스","솔찬","G1"], t1:["새로","완태","동이","G2"]}
+            {t0:["슝슝이","솔찬","루피","G1"], t1:["새로","완태","동이","G2"]}
         ],
         2: [
             {t0:["시오","백구","제리","동구"], t1:["구구","구름","따순","우민"]},
             {t0:["C코","이름","현이","곽동칠"], t1:["아몬드","로토","대식","란지"]},
             {t0:["우지","단우","쿠쿠","무지"], t1:["덕자","뉴키","후니","리버"]},
-            {t0:["슝슝이","완태","솔찬","G2"], t1:["새로","죠스","동이","G1"]}
+            {t0:["슝슝이","솔찬","동이","G2"], t1:["새로","완태","루피","G1"]}
         ],
         3: [
             {t0:["시오","구름","대식","란지"], t1:["구구","이름","현이","곽동칠"]},
             {t0:["C코","로토","따순","우민"], t1:["아몬드","백구","제리","동구"]},
             {t0:["우지","뉴키","쿠쿠","무지"], t1:["덕자","단우","후니","리버"]},
-            {t0:["슝슝이","죠스","완태","G1"], t1:["새로","솔찬","동이","G2"]}
+            {t0:["슝슝이","솔찬","루피","G1"], t1:["새로","완태","동이","G2"]}
         ],
         4: [
             {t0:["시오","이름","따순","곽동칠"], t1:["구구","로토","제리","우민"]},
             {t0:["C코","백구","현이","동구"], t1:["아몬드","구름","대식","란지"]},
             {t0:["우지","단우","후니","리버"], t1:["덕자","뉴키","쿠쿠","무지"]},
-            {t0:["슝슝이","솔찬","동이","G1"], t1:["새로","죠스","완태","G2"]}
+            {t0:["슝슝이","솔찬","동이","G2"], t1:["새로","완태","루피","G1"]}
         ],
         5: [
             {t0:["시오","구름","현이","우민"], t1:["구구","백구","따순","곽동칠"]},
             {t0:["C코","로토","대식","동구"], t1:["아몬드","이름","제리","란지"]},
             {t0:["우지","뉴키","쿠쿠","리버"], t1:["덕자","단우","후니","무지"]},
-            {t0:["슝슝이","죠스","동이","G2"], t1:["새로","솔찬","완태","G1"]}
+            {t0:["슝슝이","솔찬","루피","G1"], t1:["새로","완태","동이","G2"]}
         ]
     };
 
-    // 이미지 기반 전체 명단 (게스트 포함)
     const initialPlayers = [
         "시오", "구구", "C코", "로토", "백구", "구름", "이름", "뉴키", "단우", 
         "슝슝이", "솔찬", "새로", "현이", "대식", "따순", "제리", "후니", "쿠쿠", 
@@ -93,7 +92,7 @@
         "동이", "아몬드", "우지", "덕자", "G1", "G2"
     ].map(name => ({name, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-guest-match')) || initialPlayers;
+    let players = JSON.parse(localStorage.getItem('kok-final-match-v3')) || initialPlayers;
     let winners = {}; 
 
     function init() {
@@ -113,7 +112,7 @@
                 rPage.className = `page-content ${r===1?'active':''}`;
                 rPage.id = `page-${r}`;
                 let grid = `<div class="court-grid">`;
-                for(let c=1; c<=4; c++) { // 이미지대로 4번 코트까지만 생성
+                for(let c=1; c<=4; c++) {
                     const match = schedule[r][c-1];
                     grid += `
                         <div class="court-card">
@@ -167,7 +166,7 @@
             winTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.wins++; });
             lossTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.losses++; });
         }
-        localStorage.setItem('kok-guest-match', JSON.stringify(players));
+        localStorage.setItem('kok-final-match-v3', JSON.stringify(players));
         alert("합산 완료!");
         showRound(6);
         renderRank();
