@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 전적판 (G반영)</title>
+    <title>🐘 콕끼리 전적판 (자동 스코어)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; --excel: #27ae60; --absent: #e74c3c; }
+        :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; --excel: #27ae60; }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 90px; }
         .round-tabs { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0 10px; position: sticky; top: 0; background: var(--bg); z-index: 100; }
-        .r-btn { padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd; background: white; white-space: nowrap; font-weight: bold; flex: 1; min-width: 80px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .r-btn { padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd; background: white; white-space: nowrap; font-weight: bold; flex: 1; min-width: 80px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; }
         .r-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
         .r-btn.res-tab.active { background: var(--result); border-color: var(--result); }
         .page-content { display: none; }
@@ -18,20 +18,23 @@
         @media (min-width: 768px) { .court-grid { grid-template-columns: 1fr 1fr; } }
         .court-card { background: white; border-radius: 18px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid #eee; }
         .court-title { font-size: 1rem; font-weight: 800; color: var(--primary); margin-bottom: 12px; border-bottom: 2px solid #f0f7ff; padding-bottom: 8px; text-align: center; }
-        .match-container { display: flex; align-items: stretch; gap: 8px; position: relative; }
-        .vs-label { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); font-weight: 900; color: #ddd; font-size: 0.8rem; z-index: 1; background: white; padding: 2px; border-radius: 50%; }
-        .team-box { flex: 1; display: flex; flex-direction: column; gap: 5px; padding: 12px 8px; border-radius: 15px; background: #fafafa; border: 2px solid #f0f0f0; transition: all 0.2s; position: relative; cursor: pointer; }
-        .team-box.selected { background: #eafaf1; border-color: var(--win); }
-        .player-name { background: white; padding: 8px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.03); border: 1px solid #eee; position: relative; }
+        
+        .match-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .team-section { flex: 1; display: flex; flex-direction: column; gap: 5px; padding: 12px 8px; border-radius: 15px; background: #fafafa; border: 2px solid #f0f0f0; transition: all 0.2s; }
+        .team-section.winner { background: #eafaf1; border-color: var(--win); }
+        
+        .player-name { background: white; padding: 8px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.95rem; border: 1px solid #eee; position: relative; }
         .player-name.is-absent { color: #ccc; text-decoration: line-through; background: #f9f9f9; }
-        .player-name::after { content: '✎'; position: absolute; right: 5px; top: 2px; font-size: 10px; color: #ccc; }
-        .win-check-btn { margin-top: 8px; width: 100%; padding: 10px 0; border: 1px solid #ddd; border-radius: 10px; background: white; font-size: 0.85rem; font-weight: bold; color: #999; pointer-events: none; }
-        .team-box.selected .win-check-btn { background: var(--win); color: white; border-color: var(--win); }
-        .apply-all { width: calc(100% - 20px); max-width: 500px; padding: 20px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.2rem; font-weight: bold; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 200; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        
+        .score-input { width: 45px; height: 45px; border-radius: 10px; border: 2px solid #ddd; text-align: center; font-size: 1.2rem; font-weight: 900; color: var(--dark); outline: none; transition: border-color 0.2s; }
+        .score-input:focus { border-color: var(--primary); }
+        .vs-divider { font-weight: 900; color: #ccc; font-size: 0.9rem; }
+
+        .apply-all { width: calc(100% - 20px); max-width: 500px; padding: 20px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.2rem; font-weight: bold; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 200; box-shadow: 0 5px 20px rgba(0,0,0,0.3); cursor: pointer; }
         .rank-table { width: 100%; border-collapse: collapse; font-size: 1.05rem; background: white; border-radius: 15px; overflow: hidden; }
         .rank-table th { padding: 15px; border-bottom: 2px solid #eee; background: #fafafa; }
         .rank-table td { padding: 15px 5px; text-align: center; border-bottom: 1px solid #f2f2f2; }
-        .excel-btn { background: var(--excel); color: white; border: none; border-radius: 12px; padding: 15px; width: 100%; font-weight: bold; font-size: 1rem; margin-top: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .excel-btn { background: var(--excel); color: white; border: none; border-radius: 12px; padding: 15px; width: 100%; font-weight: bold; font-size: 1rem; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -42,20 +45,19 @@
 <div id="page-6" class="page-content">
     <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
         <h2 style="color:var(--result); margin-top:0; text-align: center;">🏆 콕끼리 순위 (G반영) 🐘</h2>
-        <p style="text-align: center; font-size: 0.8rem; color: #888;">* '불참' 인원은 순위 집계에서 제외됩니다.</p>
+        <p style="text-align: center; font-size: 0.8rem; color: #888;">* 25점 선취 시 자동 승리 처리됩니다.</p>
         <table class="rank-table" id="rankTable">
             <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th></tr></thead>
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 파일로 저장하기</button>
-        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-v11-woozi'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
+        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-v12-score'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
 
 <button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
 
 <script>
-    // '우지G' 대신 '우지'로 전체 통일
     const schedule = {
         1: [
             {t0:["대식","우지"], t1:["제리","동이"]},
@@ -92,14 +94,11 @@
         ]
     };
 
-    // '무지' 제외, '우지'로 통일된 최종 명단
-    const initialPlayers = [
-        "대식", "우지", "제리", "동이", "쿠쿠", "완태", "극선호(G)", "루피", "시오", 
-        "로토", "구구", "C코", "백구", "슝슝이", "뉴키", "단우", "현이", "따순"
-    ].map(name => ({name, wins: 0, losses: 0}));
+    const initialPlayers = ["대식", "우지", "제리", "동이", "쿠쿠", "완태", "극선호(G)", "루피", "시오", "로토", "구구", "C코", "백구", "슝슝이", "뉴키", "단우", "현이", "따순"]
+        .map(name => ({name, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-v11-woozi')) || initialPlayers;
-    let winners = {}; 
+    let players = JSON.parse(localStorage.getItem('kok-v12-score')) || initialPlayers;
+    let scores = {}; // { "1-1": [25, 18] }
 
     function init() {
         const rTabs = document.getElementById('roundTabs');
@@ -124,15 +123,15 @@
                     grid += `
                         <div class="court-card">
                             <div class="court-title">${c}경기</div>
-                            <div class="match-container">
-                                <div class="vs-label">VS</div>
-                                <div class="team-box" id="box-${r}-${c}-t0" onclick="markWinner(${r},${c},0)">
-                                    ${match.t0.map((p, pIdx) => `<div class="player-name ${p==='불참'?'is-absent':''}" onclick="editPlayer(event, ${r}, ${c}, 0, ${pIdx})">${p}</div>`).join('')}
-                                    <button class="win-check-btn">A팀 승리</button>
+                            <div class="match-row">
+                                <div class="team-section" id="team-${r}-${c}-0">
+                                    ${match.t0.map((p, pi) => `<div class="player-name" onclick="editPlayer(event, ${r}, ${c}, 0, ${pi})">${p}</div>`).join('')}
                                 </div>
-                                <div class="team-box" id="box-${r}-${c}-t1" onclick="markWinner(${r},${c},1)">
-                                    ${match.t1.map((p, pIdx) => `<div class="player-name ${p==='불참'?'is-absent':''}" onclick="editPlayer(event, ${r}, ${c}, 1, ${pIdx})">${p}</div>`).join('')}
-                                    <button class="win-check-btn">B팀 승리</button>
+                                <input type="number" class="score-input" id="score-${r}-${c}-0" oninput="checkWinner(${r},${c})" placeholder="0">
+                                <div class="vs-divider">:</div>
+                                <input type="number" class="score-input" id="score-${r}-${c}-1" oninput="checkWinner(${r},${c})" placeholder="0">
+                                <div class="team-section" id="team-${r}-${c}-1">
+                                    ${match.t1.map((p, pi) => `<div class="player-name" onclick="editPlayer(event, ${r}, ${c}, 1, ${pi})">${p}</div>`).join('')}
                                 </div>
                             </div>
                         </div>`;
@@ -145,61 +144,56 @@
         renderRank();
     }
 
-    function editPlayer(event, r, c, teamIdx, pIdx) {
-        event.stopPropagation();
-        const oldName = schedule[r][c-1][`t${teamIdx}`][pIdx];
-        const newName = prompt("이름 수정 (불참인 경우 '불참' 입력):", oldName);
-        if (newName && newName.trim() !== "") {
-            const cleanName = newName.trim();
-            schedule[r][c-1][`t${teamIdx}`][pIdx] = cleanName;
-            event.target.innerText = cleanName;
-            
-            if(cleanName === '불참') {
-                event.target.classList.add('is-absent');
-            } else {
-                event.target.classList.remove('is-absent');
-                if (!players.some(p => p.name === cleanName)) {
-                    players.push({name: cleanName, wins: 0, losses: 0});
-                }
-            }
-            renderRank();
+    function checkWinner(r, c) {
+        const s0 = parseInt(document.getElementById(`score-${r}-${c}-0`).value) || 0;
+        const s1 = parseInt(document.getElementById(`score-${r}-${c}-1`).value) || 0;
+        const t0El = document.getElementById(`team-${r}-${c}-0`);
+        const t1El = document.getElementById(`team-${r}-${c}-1`);
+
+        t0El.classList.remove('winner');
+        t1El.classList.remove('winner');
+
+        if (s0 >= 25 || s1 >= 25 || (s0 > 0 && s1 > 0)) {
+            if (s0 > s1) t0El.classList.add('winner');
+            else if (s1 > s0) t1El.classList.add('winner');
         }
+        scores[`${r}-${c}`] = [s0, s1];
     }
 
-    function showRound(r) {
-        document.querySelectorAll('.r-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
-        document.getElementById(`rbtn${r}`).classList.add('active');
-        document.getElementById(`page-${r}`).classList.add('active');
-        document.getElementById('saveBtn').style.display = r === 6 ? 'none' : 'block';
-        window.scrollTo(0,0);
-    }
-
-    function markWinner(r, c, team) {
-        winners[`${r}-${c}`] = team;
-        document.getElementById(`box-${r}-${c}-t0`).classList.toggle('selected', team === 0);
-        document.getElementById(`box-${r}-${c}-t1`).classList.toggle('selected', team === 1);
+    function editPlayer(event, r, c, tIdx, pIdx) {
+        const old = schedule[r][c-1][`t${tIdx}`][pIdx];
+        const newName = prompt("이름 수정 ('불참' 입력 시 제외):", old);
+        if (newName && newName.trim() !== "") {
+            const clean = newName.trim();
+            schedule[r][c-1][`t${tIdx}`][pIdx] = clean;
+            event.target.innerText = clean;
+            if(clean === '불참') event.target.classList.add('is-absent');
+            else {
+                event.target.classList.remove('is-absent');
+                if(!players.find(p => p.name === clean)) players.push({name: clean, wins: 0, losses: 0});
+            }
+        }
     }
 
     function confirmAndSave() {
-        const playedCount = Object.keys(winners).length;
-        if(playedCount === 0) return alert("결과가 없습니다.");
-        if(!confirm(`${playedCount}개 경기 합산할까요?`)) return;
-        
-        for(let key in winners) {
+        const keys = Object.keys(scores);
+        if(keys.length === 0) return alert("입력된 점수가 없습니다.");
+        if(!confirm("현재 점수들을 기준으로 전적을 합산할까요?")) return;
+
+        keys.forEach(key => {
             const [r, c] = key.split('-');
-            const winIdx = winners[key];
-            const match = schedule[r][parseInt(c)-1];
-            const winTeam = winIdx === 0 ? match.t0 : match.t1;
-            const lossTeam = winIdx === 0 ? match.t1 : match.t0;
-            
-            winTeam.forEach(n => { if(n !== '불참') { const p = players.find(m => m.name === n); if(p) p.wins++; } });
-            lossTeam.forEach(n => { if(n !== '불참') { const p = players.find(m => m.name === n); if(p) p.losses++; } });
-        }
-        
-        localStorage.setItem('kok-v11-woozi', JSON.stringify(players));
+            const [s0, s1] = scores[key];
+            if (s0 === s1) return; // 무승부 패스
+
+            const winTeam = s0 > s1 ? schedule[r][c-1].t0 : schedule[r][c-1].t1;
+            const lossTeam = s0 > s1 ? schedule[r][c-1].t1 : schedule[r][c-1].t0;
+
+            winTeam.forEach(n => { if(n !== '불참') { const p = players.find(x => x.name === n); if(p) p.wins++; }});
+            lossTeam.forEach(n => { if(n !== '불참') { const p = players.find(x => x.name === n); if(p) p.losses++; }});
+        });
+
+        localStorage.setItem('kok-v12-score', JSON.stringify(players));
         alert("합산 완료!");
-        winners = {};
         showRound(6);
         renderRank();
     }
@@ -208,17 +202,22 @@
         const sorted = players
             .filter(p => p.name !== '불참' && (p.wins > 0 || p.losses > 0))
             .sort((a, b) => b.wins - a.wins || a.losses - b.losses);
-            
         document.getElementById('rankBody').innerHTML = sorted.map((p, i) => `
             <tr><td>${i+1}</td><td><strong>${p.name}</strong></td><td style="color:#2ecc71; font-weight:bold;">${p.wins}</td><td>${p.losses}</td></tr>
         `).join('');
     }
 
+    function showRound(r) {
+        document.querySelectorAll('.r-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+        document.getElementById(`rbtn${r}`).classList.add('active');
+        document.getElementById(`page-${r}`).classList.add('active');
+        document.getElementById('saveBtn').style.display = r === 6 ? 'none' : 'block';
+    }
+
     function downloadExcel() {
-        const table = document.getElementById("rankTable");
-        const wb = XLSX.utils.table_to_book(table, {sheet: "전적결과"});
-        const today = new Date().toISOString().slice(0, 10);
-        XLSX.writeFile(wb, `콕끼리_결과_${today}.xlsx`);
+        const wb = XLSX.utils.table_to_book(document.getElementById("rankTable"), {sheet: "전적"});
+        XLSX.writeFile(wb, `콕끼리_결과_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
 
     init();
