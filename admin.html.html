@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 전적판 (명칭 통일)</title>
+    <title>🐘 콕끼리 전적판 (불참 관리)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; --excel: #27ae60; }
+        :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; --excel: #27ae60; --absent: #e74c3c; }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 90px; }
         .round-tabs { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0 10px; position: sticky; top: 0; background: var(--bg); z-index: 100; }
         .r-btn { padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd; background: white; white-space: nowrap; font-weight: bold; flex: 1; min-width: 80px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -23,6 +23,7 @@
         .team-box { flex: 1; display: flex; flex-direction: column; gap: 5px; padding: 12px 8px; border-radius: 15px; background: #fafafa; border: 2px solid #f0f0f0; transition: all 0.2s; position: relative; cursor: pointer; }
         .team-box.selected { background: #eafaf1; border-color: var(--win); }
         .player-name { background: white; padding: 8px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.03); border: 1px solid #eee; position: relative; }
+        .player-name.is-absent { color: #ccc; text-decoration: line-through; background: #f9f9f9; }
         .player-name::after { content: '✎'; position: absolute; right: 5px; top: 2px; font-size: 10px; color: #ccc; }
         .win-check-btn { margin-top: 8px; width: 100%; padding: 10px 0; border: 1px solid #ddd; border-radius: 10px; background: white; font-size: 0.85rem; font-weight: bold; color: #999; pointer-events: none; }
         .team-box.selected .win-check-btn { background: var(--win); color: white; border-color: var(--win); }
@@ -41,19 +42,19 @@
 <div id="page-6" class="page-content">
     <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
         <h2 style="color:var(--result); margin-top:0; text-align: center;">🏆 실시간 순위 현황 🐘</h2>
+        <p style="text-align: center; font-size: 0.8rem; color: #888;">* '불참' 인원은 순위 집계에서 제외됩니다.</p>
         <table class="rank-table" id="rankTable">
             <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th></tr></thead>
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 파일로 저장하기</button>
-        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-v8-unified'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
+        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-v8-absent'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
 
 <button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
 
 <script>
-    // 모든 '우지' 명칭을 '우지G'로 통일한 대진표
     const schedule = {
         1: [
             {t0:["대식","우지G"], t1:["제리","동이"]},
@@ -73,7 +74,7 @@
             {t0:["루피","우지G"], t1:["완태","동이"]},
             {t0:["시오","C코"], t1:["구구","로토"]},
             {t0:["현이","따순"], t1:["대식","제리"]},
-            {t0:["루피","완태"], t1:["동이","우지G"]},
+            {t0:["루피","완태"], t1:["동이","우지"]},
             {t0:["백구","단우"], t1:["뉴키","슝슝이"]}
         ],
         4: [
@@ -86,16 +87,16 @@
             {t0:["따순","완태"], t1:["제리","루피"]},
             {t0:["시오","슝슝이"], t1:["C코","뉴키"]},
             {t0:["구구","단우"], t1:["로토","백구"]},
-            {t0:["현이","우지G"], t1:["따순","동이"]}
+            {t0:["현이","우지"], t1:["따순","동이"]}
         ]
     };
 
     const initialPlayers = [
         "대식", "우지G", "제리", "동이", "쿠쿠", "완태", "극선호(G)", "루피", "시오", 
-        "로토", "구구", "C코", "백구", "슝슝이", "뉴키", "단우", "현이", "따순"
+        "로토", "구구", "C코", "백구", "슝슝이", "뉴키", "단우", "현이", "따순", "우지"
     ].map(name => ({name, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-v8-unified')) || initialPlayers;
+    let players = JSON.parse(localStorage.getItem('kok-v8-absent')) || initialPlayers;
     let winners = {}; 
 
     function init() {
@@ -124,11 +125,11 @@
                             <div class="match-container">
                                 <div class="vs-label">VS</div>
                                 <div class="team-box" id="box-${r}-${c}-t0" onclick="markWinner(${r},${c},0)">
-                                    ${match.t0.map((p, pIdx) => `<div class="player-name" onclick="editPlayer(event, ${r}, ${c}, 0, ${pIdx})">${p}</div>`).join('')}
+                                    ${match.t0.map((p, pIdx) => `<div class="player-name ${p==='불참'?'is-absent':''}" onclick="editPlayer(event, ${r}, ${c}, 0, ${pIdx})">${p}</div>`).join('')}
                                     <button class="win-check-btn">A팀 승리</button>
                                 </div>
                                 <div class="team-box" id="box-${r}-${c}-t1" onclick="markWinner(${r},${c},1)">
-                                    ${match.t1.map((p, pIdx) => `<div class="player-name" onclick="editPlayer(event, ${r}, ${c}, 1, ${pIdx})">${p}</div>`).join('')}
+                                    ${match.t1.map((p, pIdx) => `<div class="player-name ${p==='불참'?'is-absent':''}" onclick="editPlayer(event, ${r}, ${c}, 1, ${pIdx})">${p}</div>`).join('')}
                                     <button class="win-check-btn">B팀 승리</button>
                                 </div>
                             </div>
@@ -145,15 +146,21 @@
     function editPlayer(event, r, c, teamIdx, pIdx) {
         event.stopPropagation();
         const oldName = schedule[r][c-1][`t${teamIdx}`][pIdx];
-        const newName = prompt("이름 수정:", oldName);
+        const newName = prompt("이름 수정 (불참인 경우 '불참' 입력):", oldName);
         if (newName && newName.trim() !== "") {
             const cleanName = newName.trim();
             schedule[r][c-1][`t${teamIdx}`][pIdx] = cleanName;
             event.target.innerText = cleanName;
-            if (!players.some(p => p.name === cleanName)) {
-                players.push({name: cleanName, wins: 0, losses: 0});
-                renderRank();
+            
+            if(cleanName === '불참') {
+                event.target.classList.add('is-absent');
+            } else {
+                event.target.classList.remove('is-absent');
+                if (!players.some(p => p.name === cleanName)) {
+                    players.push({name: cleanName, wins: 0, losses: 0});
+                }
             }
+            renderRank();
         }
     }
 
@@ -183,11 +190,13 @@
             const match = schedule[r][parseInt(c)-1];
             const winTeam = winIdx === 0 ? match.t0 : match.t1;
             const lossTeam = winIdx === 0 ? match.t1 : match.t0;
-            winTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.wins++; });
-            lossTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.losses++; });
+            
+            // '불참'이 아닌 경우에만 승패 기록
+            winTeam.forEach(n => { if(n !== '불참') { const p = players.find(m => m.name === n); if(p) p.wins++; } });
+            lossTeam.forEach(n => { if(n !== '불참') { const p = players.find(m => m.name === n); if(p) p.losses++; } });
         }
         
-        localStorage.setItem('kok-v8-unified', JSON.stringify(players));
+        localStorage.setItem('kok-v8-absent', JSON.stringify(players));
         alert("합산 완료!");
         winners = {};
         showRound(6);
@@ -195,7 +204,11 @@
     }
 
     function renderRank() {
-        const sorted = [...players].sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+        // '불참' 제외하고 실제 승패가 있는 사람만 순위표에 노출
+        const sorted = players
+            .filter(p => p.name !== '불참' && (p.wins > 0 || p.losses > 0))
+            .sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+            
         document.getElementById('rankBody').innerHTML = sorted.map((p, i) => `
             <tr><td>${i+1}</td><td><strong>${p.name}</strong></td><td style="color:#2ecc71; font-weight:bold;">${p.wins}</td><td>${p.losses}</td></tr>
         `).join('');
