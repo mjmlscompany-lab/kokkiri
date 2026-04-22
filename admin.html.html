@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 전적판 (수정가능)</title>
+    <title>🐘 콕끼리 전적판 (우지G 반영)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; --excel: #27ae60; }
@@ -22,11 +22,8 @@
         .vs-label { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); font-weight: 900; color: #ddd; font-size: 0.8rem; z-index: 1; background: white; padding: 2px; border-radius: 50%; }
         .team-box { flex: 1; display: flex; flex-direction: column; gap: 5px; padding: 12px 8px; border-radius: 15px; background: #fafafa; border: 2px solid #f0f0f0; transition: all 0.2s; position: relative; cursor: pointer; }
         .team-box.selected { background: #eafaf1; border-color: var(--win); }
-        
-        /* 이름 클릭 유도 스타일 */
         .player-name { background: white; padding: 8px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.03); border: 1px solid #eee; position: relative; }
         .player-name::after { content: '✎'; position: absolute; right: 5px; top: 2px; font-size: 10px; color: #ccc; }
-
         .win-check-btn { margin-top: 8px; width: 100%; padding: 10px 0; border: 1px solid #ddd; border-radius: 10px; background: white; font-size: 0.85rem; font-weight: bold; color: #999; pointer-events: none; }
         .team-box.selected .win-check-btn { background: var(--win); color: white; border-color: var(--win); }
         .apply-all { width: calc(100% - 20px); max-width: 500px; padding: 20px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.2rem; font-weight: bold; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 200; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
@@ -49,30 +46,31 @@
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 파일로 저장하기</button>
-        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-v6-search'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
+        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-v7-final'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
 
 <button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
 
 <script>
+    // '무지' 대신 '우지G' 반영된 대진표
     const schedule = {
         1: [
-            {t0:["대식","무지"], t1:["제리","동이"]},
+            {t0:["대식","우지G"], t1:["제리","동이"]},
             {t0:["쿠쿠","완태"], t1:["극선호(G)","루피"]},
             {t0:["시오","로토"], t1:["구구","C코"]},
             {t0:["백구","슝슝이"], t1:["뉴키","단우"]},
             {t0:["현이","제리"], t1:["대식","따순"]}
         ],
         2: [
-            {t0:["쿠쿠","무지"], t1:["극선호(G)","동이"]},
+            {t0:["쿠쿠","우지G"], t1:["극선호(G)","동이"]},
             {t0:["시오","구구"], t1:["C코","로토"]},
             {t0:["쿠쿠","극선호(G)"], t1:["루피","완태"]},
             {t0:["현이","대식"], t1:["따순","제리"]},
             {t0:["백구","뉴키"], t1:["단우","슝슝이"]}
         ],
         3: [
-            {t0:["루피","무지"], t1:["완태","동이"]},
+            {t0:["루피","우지G"], t1:["완태","동이"]},
             {t0:["시오","C코"], t1:["구구","로토"]},
             {t0:["현이","따순"], t1:["대식","제리"]},
             {t0:["루피","완태"], t1:["동이","우지"]},
@@ -93,11 +91,11 @@
     };
 
     const initialPlayers = [
-        "대식", "무지", "제리", "동이", "쿠쿠", "완태", "극선호(G)", "루피", "시오", 
+        "대식", "우지G", "제리", "동이", "쿠쿠", "완태", "극선호(G)", "루피", "시오", 
         "로토", "구구", "C코", "백구", "슝슝이", "뉴키", "단우", "현이", "따순", "우지"
     ].map(name => ({name, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-v6-search')) || initialPlayers;
+    let players = JSON.parse(localStorage.getItem('kok-v7-final')) || initialPlayers;
     let winners = {}; 
 
     function init() {
@@ -144,19 +142,14 @@
         renderRank();
     }
 
-    // 이름 클릭 시 수정 기능
     function editPlayer(event, r, c, teamIdx, pIdx) {
-        event.stopPropagation(); // 부모 클릭(승리 선택) 방지
+        event.stopPropagation();
         const oldName = schedule[r][c-1][`t${teamIdx}`][pIdx];
-        const newName = prompt("선수 이름을 수정하거나 검색하세요:", oldName);
-        
+        const newName = prompt("이름 수정:", oldName);
         if (newName && newName.trim() !== "") {
             const cleanName = newName.trim();
-            // 1. 대진표 데이터 업데이트
             schedule[r][c-1][`t${teamIdx}`][pIdx] = cleanName;
-            // 2. 화면 업데이트
             event.target.innerText = cleanName;
-            // 3. 만약 명단에 없는 이름이면 명단에 추가 (순위표 집계용)
             if (!players.some(p => p.name === cleanName)) {
                 players.push({name: cleanName, wins: 0, losses: 0});
                 renderRank();
@@ -181,23 +174,21 @@
 
     function confirmAndSave() {
         const playedCount = Object.keys(winners).length;
-        if(playedCount === 0) return alert("입력된 경기 결과가 없습니다.");
-        if(!confirm(`${playedCount}개의 경기 결과를 합산하시겠습니까?`)) return;
+        if(playedCount === 0) return alert("결과가 없습니다.");
+        if(!confirm(`${playedCount}개 경기 합산할까요?`)) return;
         
         for(let key in winners) {
             const [r, c] = key.split('-');
             const winIdx = winners[key];
             const match = schedule[r][parseInt(c)-1];
-            
             const winTeam = winIdx === 0 ? match.t0 : match.t1;
             const lossTeam = winIdx === 0 ? match.t1 : match.t0;
-            
             winTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.wins++; });
             lossTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.losses++; });
         }
         
-        localStorage.setItem('kok-v6-search', JSON.stringify(players));
-        alert("합산 완료되었습니다!");
+        localStorage.setItem('kok-v7-final', JSON.stringify(players));
+        alert("합산 완료!");
         winners = {};
         showRound(6);
         renderRank();
