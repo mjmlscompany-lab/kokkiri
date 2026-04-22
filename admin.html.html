@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 전적판 (우지G 반영)</title>
+    <title>🐘 콕끼리 전적판 (명칭 통일)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; --excel: #27ae60; }
@@ -46,14 +46,14 @@
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 파일로 저장하기</button>
-        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-v7-final'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
+        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-v8-unified'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
 
 <button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
 
 <script>
-    // '무지' 대신 '우지G' 반영된 대진표
+    // 모든 '우지' 명칭을 '우지G'로 통일한 대진표
     const schedule = {
         1: [
             {t0:["대식","우지G"], t1:["제리","동이"]},
@@ -73,7 +73,7 @@
             {t0:["루피","우지G"], t1:["완태","동이"]},
             {t0:["시오","C코"], t1:["구구","로토"]},
             {t0:["현이","따순"], t1:["대식","제리"]},
-            {t0:["루피","완태"], t1:["동이","우지"]},
+            {t0:["루피","완태"], t1:["동이","우지G"]},
             {t0:["백구","단우"], t1:["뉴키","슝슝이"]}
         ],
         4: [
@@ -86,16 +86,16 @@
             {t0:["따순","완태"], t1:["제리","루피"]},
             {t0:["시오","슝슝이"], t1:["C코","뉴키"]},
             {t0:["구구","단우"], t1:["로토","백구"]},
-            {t0:["현이","우지"], t1:["따순","동이"]}
+            {t0:["현이","우지G"], t1:["따순","동이"]}
         ]
     };
 
     const initialPlayers = [
         "대식", "우지G", "제리", "동이", "쿠쿠", "완태", "극선호(G)", "루피", "시오", 
-        "로토", "구구", "C코", "백구", "슝슝이", "뉴키", "단우", "현이", "따순", "우지"
+        "로토", "구구", "C코", "백구", "슝슝이", "뉴키", "단우", "현이", "따순"
     ].map(name => ({name, wins: 0, losses: 0}));
 
-    let players = JSON.parse(localStorage.getItem('kok-v7-final')) || initialPlayers;
+    let players = JSON.parse(localStorage.getItem('kok-v8-unified')) || initialPlayers;
     let winners = {}; 
 
     function init() {
@@ -187,7 +187,7 @@
             lossTeam.forEach(n => { const p = players.find(m => m.name === n); if(p) p.losses++; });
         }
         
-        localStorage.setItem('kok-v7-final', JSON.stringify(players));
+        localStorage.setItem('kok-v8-unified', JSON.stringify(players));
         alert("합산 완료!");
         winners = {};
         showRound(6);
