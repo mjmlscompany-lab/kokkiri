@@ -3,66 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 승패 기록판 (시드전 3R)</title>
+    <title>🐘 콕끼리 통합 기록판 (시드전 + 랜덤)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; --excel: #27ae60; }
+        :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; --excel: #27ae60; --random: #e67e22; }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 90px; }
-        
-        /* 상단 탭 */
         .round-tabs { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0 10px; position: sticky; top: 0; background: var(--bg); z-index: 100; }
-        .r-btn { padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd; background: white; white-space: nowrap; font-weight: bold; flex: 1; min-width: 80px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; }
+        .r-btn { padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd; background: white; white-space: nowrap; font-weight: bold; flex: 1; min-width: 70px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; }
         .r-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
         .r-btn.res-tab.active { background: var(--result); border-color: var(--result); }
-        
+        .r-btn.rnd-tab { color: var(--random); border-color: var(--random); }
+        .r-btn.rnd-tab.active { background: var(--random); color: white; }
         .page-content { display: none; }
         .page-content.active { display: block; }
-        
-        /* 대진 카드 */
         .court-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         @media (min-width: 768px) { .court-grid { grid-template-columns: 1fr 1fr; } }
         .court-card { background: white; border-radius: 18px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid #eee; }
         .court-title { font-size: 1rem; font-weight: 800; color: var(--primary); margin-bottom: 12px; border-bottom: 2px solid #f0f7ff; padding-bottom: 8px; text-align: center; }
-        
         .match-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
-        
-        /* 팀 선택 영역 (트로피 음영 반영) */
         .team-section { flex: 1; display: flex; flex-direction: column; gap: 5px; padding: 25px 8px; border-radius: 15px; background: #fff; border: 2px solid #eee; transition: all 0.2s; cursor: pointer; position: relative; min-height: 80px; justify-content: center; }
-        
-        .team-section.winner { 
-            background-color: #eafaf1; 
-            border-color: var(--win); 
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%232ecc7122' d='M528 0H48C21.5 0 0 21.5 0 48v24c0 13.3 10.7 24 24 24s24-10.7 24-24V48h432v24c0 13.3 10.7 24 24 24s24-10.7 24-24V48c0-26.5-21.5-48-48-48zM112 128H48v24c0 13.3 10.7 24 24 24s24-10.7 24-24v-24h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24V144c0-26.5-21.5-48-48-48s-48 21.5-48 48v240c0 53 43 96 96 96h112c53 0 96-43 96-96V128h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24v-160zM400 128h-64v24c0 13.3 10.7 24 24 24s24-10.7 24-24v-24h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24V144c0-26.5-21.5-48-48-48s-48 21.5-48 48v240c0 53 43 96 96 96h112c53 0 96-43 96-96V128h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24v-160zm128-80v160c0 53-43 96-96 96H288v64h112c13.3 0 24 10.7 24 24s-10.7 24-24 24h-112c-26.5 0-48 21.5-48 48H112c-26.5 0-48-21.5-48-48H48c-13.3 0-24-10.7-24-24s10.7-24 24-24h16v-64h112c53 0 96-43 96-96V128h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24v-160h128z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: contain;
-        }
-        
-        .team-section.winner::before {
-            content: 'WINNER 🏆';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: var(--win);
-            z-index: 10;
-            text-shadow: 0 0 10px white;
-        }
-
+        .team-section.winner { background-color: #eafaf1; border-color: var(--win); background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%232ecc7122' d='M528 0H48C21.5 0 0 21.5 0 48v24c0 13.3 10.7 24 24 24s24-10.7 24-24V48h432v24c0 13.3 10.7 24 24 24s24-10.7 24-24V48c0-26.5-21.5-48-48-48zM112 128H48v24c0 13.3 10.7 24 24 24s24-10.7 24-24v-24h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24V144c0-26.5-21.5-48-48-48s-48 21.5-48 48v240c0 53 43 96 96 96h112c53 0 96-43 96-96V128h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24v-160zM400 128h-64v24c0 13.3 10.7 24 24 24s24-10.7 24-24v-24h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24V144c0-26.5-21.5-48-48-48s-48 21.5-48 48v240c0 53 43 96 96 96h112c53 0 96-43 96-96V128h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24v-160zm128-80v160c0 53-43 96-96 96H288v64h112c13.3 0 24 10.7 24 24s-10.7 24-24 24h-112c-26.5 0-48 21.5-48 48H112c-26.5 0-48-21.5-48-48H48c-13.3 0-24-10.7-24-24s10.7-24 24-24h16v-64h112c53 0 96-43 96-96V128h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24v-160h128z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; background-size: contain; }
+        .team-section.winner::before { content: 'WINNER 🏆'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.3rem; font-weight: 900; color: var(--win); z-index: 10; text-shadow: 0 0 10px white; }
         .team-section.winner .player-name { opacity: 0.3; }
         .player-name { background: white; padding: 6px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.95rem; border: 1px solid #eee; z-index: 5; }
         .vs-divider { font-weight: 900; color: #ddd; font-size: 1.2rem; }
-
-        /* 하단 합산 버튼 */
         .apply-all { width: calc(100% - 20px); max-width: 500px; padding: 20px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.2rem; font-weight: bold; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 200; box-shadow: 0 5px 20px rgba(0,0,0,0.3); cursor: pointer; }
-        
-        /* 순위표 */
         .rank-table { width: 100%; border-collapse: collapse; font-size: 1.05rem; background: white; border-radius: 15px; overflow: hidden; }
         .rank-table th { padding: 15px; border-bottom: 2px solid #eee; background: #fafafa; }
         .rank-table td { padding: 15px 5px; text-align: center; border-bottom: 1px solid #f2f2f2; }
         .excel-btn { background: var(--excel); color: white; border: none; border-radius: 12px; padding: 15px; width: 100%; font-weight: bold; font-size: 1rem; margin-top: 15px; cursor: pointer; }
+        .rnd-gen-btn { background: var(--random); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; margin-bottom: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -70,32 +40,30 @@
 <div class="round-tabs" id="roundTabs"></div>
 <div id="mainContainer"></div>
 
-<div id="page-4" class="page-content">
+<div id="page-random" class="page-content">
+    <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
+        <h3 style="margin-top:0; color: var(--random);">🎲 랜덤 대진 생성</h3>
+        <button class="rnd-gen-btn" onclick="generateRandomSchedule()">새로운 랜덤 대진 만들기</button>
+        <div id="randomMatchArea"></div>
+    </div>
+</div>
+
+<div id="page-result" class="page-content">
     <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-        <h2 style="color:var(--result); margin-top:0; text-align: center;">🏆 콕끼리 시드전 순위 🐘</h2>
-        <p style="text-align: center; font-size: 0.8rem; color: #888;">* 승리 1 / 패배 -1 / 출석 0.5</p>
+        <h2 style="color:var(--result); margin-top:0; text-align: center;">🏆 콕끼리 통합 순위 🐘</h2>
         <table class="rank-table" id="rankTable">
-            <thead>
-                <tr>
-                    <th>순위</th>
-                    <th>이름</th>
-                    <th>승</th>
-                    <th>패</th>
-                    <th>포인트</th>
-                </tr>
-            </thead>
+            <thead><tr><th>순위</th><th>이름</th><th>승</th><th>패</th><th>포인트</th></tr></thead>
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 저장</button>
-        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-seed-v3'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
+        <button onclick="if(confirm('모든 데이터를 초기화할까요?')) {localStorage.removeItem('kok-total-v1'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
 
 <button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
 
 <script>
-    // 이미지(image_2b3bd4.png) 기반 1R~3R 대진 데이터
-    const schedule = {
+    const fixedSchedule = {
         1: [
             {t0:["구구","단우"], t1:["로토","구름"]},
             {t0:["이름","백구"], t1:["새로","바유"]},
@@ -119,50 +87,96 @@
         ]
     };
 
-    const initialNames = ["구구", "단우", "로토", "구름", "이름", "백구", "새로", "바유", "슝슝이", "쿠쿠", "제리", "후니", "현이", "따순", "라임", "곽동칠", "리버", "우지", "동이", "극선호", "선호"];
-    
-    let players = JSON.parse(localStorage.getItem('kok-seed-v3')) || initialNames.map(name => ({name, wins: 0, losses: 0, attendance: 0.5}));
+    const playerList = ["구구", "단우", "로토", "구름", "이름", "백구", "새로", "바유", "슝슝이", "쿠쿠", "제리", "후니", "현이", "따순", "라임", "곽동칠", "리버", "우지", "동이", "극선호", "선호"];
+    let players = JSON.parse(localStorage.getItem('kok-total-v1')) || playerList.map(name => ({name, wins: 0, losses: 0}));
     let results = {}; 
+    let currentRandomMatch = [];
 
     function init() {
         const rTabs = document.getElementById('roundTabs');
         const main = document.getElementById('mainContainer');
 
-        for(let r=1; r<=4; r++) {
+        // 1~3R 시드전 탭
+        for(let r=1; r<=3; r++) {
             const btn = document.createElement('button');
-            btn.className = `r-btn ${r===1?'active':''} ${r===4?'res-tab':''}`;
+            btn.className = `r-btn ${r===1?'active':''}`;
             btn.id = `rbtn${r}`;
-            btn.innerText = r === 4 ? '📊 결과' : `${r}세트`;
+            btn.innerText = `${r}세트`;
             btn.onclick = () => showRound(r);
             rTabs.appendChild(btn);
 
-            if(r < 4) {
-                const rPage = document.createElement('div');
-                rPage.className = `page-content ${r===1?'active':''}`;
-                rPage.id = `page-${r}`;
-                let grid = `<div class="court-grid">`;
-                schedule[r].forEach((match, idx) => {
-                    const c = idx + 1;
-                    grid += `
-                        <div class="court-card">
-                            <div class="court-title">${c}경기</div>
-                            <div class="match-row">
-                                <div class="team-section" id="team-${r}-${c}-0" onclick="setWinner(${r}, ${c}, 0)">
-                                    ${match.t0.map(p => `<div class="player-name">${p}</div>`).join('')}
-                                </div>
-                                <div class="vs-divider">VS</div>
-                                <div class="team-section" id="team-${r}-${c}-1" onclick="setWinner(${r}, ${c}, 1)">
-                                    ${match.t1.map(p => `<div class="player-name">${p}</div>`).join('')}
-                                </div>
+            const rPage = document.createElement('div');
+            rPage.className = `page-content ${r===1?'active':''}`;
+            rPage.id = `page-${r}`;
+            let grid = `<div class="court-grid">`;
+            fixedSchedule[r].forEach((match, idx) => {
+                const c = idx + 1;
+                grid += `
+                    <div class="court-card">
+                        <div class="court-title">${c}경기</div>
+                        <div class="match-row">
+                            <div class="team-section" id="team-${r}-${c}-0" onclick="setWinner(${r}, ${c}, 0)">
+                                ${match.t0.map(p => `<div class="player-name">${p}</div>`).join('')}
                             </div>
-                        </div>`;
-                });
-                grid += `</div>`;
-                rPage.innerHTML = grid;
-                main.appendChild(rPage);
-            }
+                            <div class="vs-divider">VS</div>
+                            <div class="team-section" id="team-${r}-${c}-1" onclick="setWinner(${r}, ${c}, 1)">
+                                ${match.t1.map(p => `<div class="player-name">${p}</div>`).join('')}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            grid += `</div>`;
+            rPage.innerHTML = grid;
+            main.appendChild(rPage);
         }
+
+        // 랜덤 탭 추가
+        const rndBtn = document.createElement('button');
+        rndBtn.className = 'r-btn rnd-tab';
+        rndBtn.id = 'rbtn-random';
+        rndBtn.innerText = '🎲 랜덤';
+        rndBtn.onclick = () => showRound('random');
+        rTabs.appendChild(rndBtn);
+
+        // 결과 탭 추가
+        const resBtn = document.createElement('button');
+        resBtn.className = 'r-btn res-tab';
+        resBtn.id = 'rbtn-result';
+        resBtn.innerText = '📊 결과';
+        resBtn.onclick = () => showRound('result');
+        rTabs.appendChild(resBtn);
+
         renderRank();
+    }
+
+    function generateRandomSchedule() {
+        const shuffled = [...playerList].sort(() => Math.random() - 0.5);
+        currentRandomMatch = [];
+        let html = `<div class="court-grid">`;
+        
+        for(let i=0; i<shuffled.length - 1; i+=4) {
+            const courtNum = (i/4) + 1;
+            const t0 = [shuffled[i], shuffled[i+1]];
+            const t1 = [shuffled[i+2], shuffled[i+3] || "미지정"];
+            currentRandomMatch.push({t0, t1});
+
+            html += `
+                <div class="court-card">
+                    <div class="court-title">랜덤 ${courtNum}경기</div>
+                    <div class="match-row">
+                        <div class="team-section" id="team-rnd-${courtNum}-0" onclick="setWinner('rnd', ${courtNum}, 0)">
+                            ${t0.map(p => `<div class="player-name">${p}</div>`).join('')}
+                        </div>
+                        <div class="vs-divider">VS</div>
+                        <div class="team-section" id="team-rnd-${courtNum}-1" onclick="setWinner('rnd', ${courtNum}, 1)">
+                            ${t1.map(p => `<div class="player-name">${p}</div>`).join('')}
+                        </div>
+                    </div>
+                </div>`;
+        }
+        html += `</div>`;
+        document.getElementById('randomMatchArea').innerHTML = html;
+        results = {}; // 랜덤 생성 시 선택 초기화
     }
 
     function setWinner(r, c, winIdx) {
@@ -170,32 +184,34 @@
         const t1El = document.getElementById(`team-${r}-${c}-1`);
         t0El.classList.remove('winner');
         t1El.classList.remove('winner');
-        
-        if (results[`${r}-${c}`] === winIdx) {
-            delete results[`${r}-${c}`];
-        } else {
-            document.getElementById(`team-${r}-${c}-${winIdx}`).classList.add('winner');
-            results[`${r}-${c}`] = winIdx;
-        }
+        if (results[`${r}-${c}`] === winIdx) { delete results[`${r}-${c}`]; } 
+        else { document.getElementById(`team-${r}-${c}-${winIdx}`).classList.add('winner'); results[`${r}-${c}`] = winIdx; }
     }
 
     function confirmAndSave() {
         const keys = Object.keys(results);
-        if(keys.length === 0) return alert("입력된 승패 결과가 없습니다.");
-        if(!confirm("현재 라운드의 결과를 전적에 합산하시겠습니까?")) return;
+        if(keys.length === 0) return alert("승리팀을 선택해주세요.");
+        if(!confirm("선택한 결과를 전적에 합산할까요?")) return;
 
         keys.forEach(key => {
             const [r, c] = key.split('-');
             const winIdx = results[key];
             const lossIdx = winIdx === 0 ? 1 : 0;
-            const winTeam = schedule[r][c-1][`t${winIdx}`];
-            const lossTeam = schedule[r][c-1][`t${lossIdx}`];
+            let winTeam, lossTeam;
+
+            if(r === 'rnd') {
+                winTeam = currentRandomMatch[c-1][`t${winIdx}`];
+                lossTeam = currentRandomMatch[c-1][`t${lossIdx}`];
+            } else {
+                winTeam = fixedSchedule[r][c-1][`t${winIdx}`];
+                lossTeam = fixedSchedule[r][c-1][`t${lossIdx}`];
+            }
 
             winTeam.forEach(n => { const p = players.find(x => x.name === n); if(p) p.wins++; });
             lossTeam.forEach(n => { const p = players.find(x => x.name === n); if(p) p.losses++; });
         });
 
-        localStorage.setItem('kok-seed-v3', JSON.stringify(players));
+        localStorage.setItem('kok-total-v1', JSON.stringify(players));
         alert("합산 완료!");
         results = {};
         location.reload();
@@ -204,30 +220,24 @@
     function renderRank() {
         const getPoint = (p) => (p.wins * 1) + (p.losses * -1) + 0.5;
         const sorted = players.filter(p => p.wins > 0 || p.losses > 0).sort((a, b) => getPoint(b) - getPoint(a));
-        document.getElementById('rankBody').innerHTML = sorted.map((p, i) => `
-            <tr>
-                <td>${i+1}</td>
-                <td><strong>${p.name}</strong></td>
-                <td>${p.wins}</td>
-                <td>${p.losses}</td>
-                <td style="font-weight:bold; color:var(--result);">${getPoint(p).toFixed(1)}</td>
-            </tr>
-        `).join('');
+        document.getElementById('rankBody').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><strong>${p.name}</strong></td><td>${p.wins}</td><td>${p.losses}</td><td style="font-weight:bold; color:var(--result);">${getPoint(p).toFixed(1)}</td></tr>`).join('');
     }
 
     function showRound(r) {
         document.querySelectorAll('.r-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
-        document.getElementById(`rbtn${r}`).classList.add('active');
-        document.getElementById(`page-${r}`).classList.add('active');
-        document.getElementById('saveBtn').style.display = r === 4 ? 'none' : 'block';
+        document.getElementById(`rbtn-${r}` || `rbtn${r}`).classList.add('active');
+        if(r === 'random') document.getElementById('page-random').classList.add('active');
+        else if(r === 'result') document.getElementById('page-result').classList.add('active');
+        else document.getElementById(`page-${r}`).classList.add('active');
+        
+        document.getElementById('saveBtn').style.display = r === 'result' ? 'none' : 'block';
     }
 
     function downloadExcel() {
-        const wb = XLSX.utils.table_to_book(document.getElementById("rankTable"), {sheet: "전적"});
-        XLSX.writeFile(wb, `콕끼리_시드전_결과_${new Date().toISOString().slice(0,10)}.xlsx`);
+        const wb = XLSX.utils.table_to_book(document.getElementById("rankTable"), {sheet: "통합전적"});
+        XLSX.writeFile(wb, `콕끼리_종합결과_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
-
     init();
 </script>
 </body>
