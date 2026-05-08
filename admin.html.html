@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 통합 기록판 (시드전 + 랜덤)</title>
+    <title>🐘 콕끼리 통합 기록판 (시드전 + 고정랜덤)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; --excel: #27ae60; --random: #e67e22; }
@@ -32,21 +32,12 @@
         .rank-table th { padding: 15px; border-bottom: 2px solid #eee; background: #fafafa; }
         .rank-table td { padding: 15px 5px; text-align: center; border-bottom: 1px solid #f2f2f2; }
         .excel-btn { background: var(--excel); color: white; border: none; border-radius: 12px; padding: 15px; width: 100%; font-weight: bold; font-size: 1rem; margin-top: 15px; cursor: pointer; }
-        .rnd-gen-btn { background: var(--random); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; margin-bottom: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="round-tabs" id="roundTabs"></div>
 <div id="mainContainer"></div>
-
-<div id="page-random" class="page-content">
-    <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
-        <h3 style="margin-top:0; color: var(--random);">🎲 랜덤 대진 생성</h3>
-        <button class="rnd-gen-btn" onclick="generateRandomSchedule()">새로운 랜덤 대진 만들기</button>
-        <div id="randomMatchArea"></div>
-    </div>
-</div>
 
 <div id="page-result" class="page-content">
     <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
@@ -56,14 +47,15 @@
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 저장</button>
-        <button onclick="if(confirm('모든 데이터를 초기화할까요?')) {localStorage.removeItem('kok-total-v1'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
+        <button onclick="if(confirm('모든 데이터를 초기화할까요?')) {localStorage.removeItem('kok-final-v1'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
 
 <button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
 
 <script>
-    const fixedSchedule = {
+    // 이미지 및 요청 사항 기반 대진표 데이터
+    const fullSchedule = {
         1: [
             {t0:["구구","단우"], t1:["로토","구름"]},
             {t0:["이름","백구"], t1:["새로","바유"]},
@@ -84,24 +76,38 @@
             {t0:["새로","제리"], t1:["후니","슝슝이"]},
             {t0:["쿠쿠","따순"], t1:["현이","라임"]},
             {t0:["리버","동이"], t1:["극선호","우지"]}
+        ],
+        4: [ // 요청하신 랜덤 4경기
+            {t0:["구구","우지"], t1:["단우","극선호"]},
+            {t0:["로토","리버"], t1:["구름","따순"]},
+            {t0:["이름","선호"], t1:["백구","곽동칠"]},
+            {t0:["바유","현이"], t1:["슝슝이","라임"]},
+            {t0:["후니","새로"], t1:["제리","쿠쿠"]}
+        ],
+        5: [ // 요청하신 랜덤 5경기
+            {t0:["구구","동이"], t1:["단우","새로"]},
+            {t0:["로토","라임"], t1:["구름","곽동칠"]},
+            {t0:["이름","쿠쿠"], t1:["백구","리버"]},
+            {t0:["바유","후니"], t1:["슝슝이","제리"]},
+            {t0:["현이","선호"], t1:["따순","극선호"]}
         ]
     };
 
     const playerList = ["구구", "단우", "로토", "구름", "이름", "백구", "새로", "바유", "슝슝이", "쿠쿠", "제리", "후니", "현이", "따순", "라임", "곽동칠", "리버", "우지", "동이", "극선호", "선호"];
-    let players = JSON.parse(localStorage.getItem('kok-total-v1')) || playerList.map(name => ({name, wins: 0, losses: 0}));
+    let players = JSON.parse(localStorage.getItem('kok-final-v1')) || playerList.map(name => ({name, wins: 0, losses: 0}));
     let results = {}; 
-    let currentRandomMatch = [];
 
     function init() {
         const rTabs = document.getElementById('roundTabs');
         const main = document.getElementById('mainContainer');
 
-        // 1~3R 시드전 탭
-        for(let r=1; r<=3; r++) {
+        // 1~5세트 탭 생성
+        for(let r=1; r<=5; r++) {
             const btn = document.createElement('button');
-            btn.className = `r-btn ${r===1?'active':''}`;
+            const isRandom = r >= 4;
+            btn.className = `r-btn ${r===1?'active':''} ${isRandom?'rnd-tab':''}`;
             btn.id = `rbtn${r}`;
-            btn.innerText = `${r}세트`;
+            btn.innerText = isRandom ? `${r}세트(R)` : `${r}세트`;
             btn.onclick = () => showRound(r);
             rTabs.appendChild(btn);
 
@@ -109,11 +115,11 @@
             rPage.className = `page-content ${r===1?'active':''}`;
             rPage.id = `page-${r}`;
             let grid = `<div class="court-grid">`;
-            fixedSchedule[r].forEach((match, idx) => {
+            fullSchedule[r].forEach((match, idx) => {
                 const c = idx + 1;
                 grid += `
                     <div class="court-card">
-                        <div class="court-title">${c}경기</div>
+                        <div class="court-title">${isRandom ? '랜덤 ' : ''}${c}경기</div>
                         <div class="match-row">
                             <div class="team-section" id="team-${r}-${c}-0" onclick="setWinner(${r}, ${c}, 0)">
                                 ${match.t0.map(p => `<div class="player-name">${p}</div>`).join('')}
@@ -130,15 +136,7 @@
             main.appendChild(rPage);
         }
 
-        // 랜덤 탭 추가
-        const rndBtn = document.createElement('button');
-        rndBtn.className = 'r-btn rnd-tab';
-        rndBtn.id = 'rbtn-random';
-        rndBtn.innerText = '🎲 랜덤';
-        rndBtn.onclick = () => showRound('random');
-        rTabs.appendChild(rndBtn);
-
-        // 결과 탭 추가
+        // 결과 탭
         const resBtn = document.createElement('button');
         resBtn.className = 'r-btn res-tab';
         resBtn.id = 'rbtn-result';
@@ -147,36 +145,6 @@
         rTabs.appendChild(resBtn);
 
         renderRank();
-    }
-
-    function generateRandomSchedule() {
-        const shuffled = [...playerList].sort(() => Math.random() - 0.5);
-        currentRandomMatch = [];
-        let html = `<div class="court-grid">`;
-        
-        for(let i=0; i<shuffled.length - 1; i+=4) {
-            const courtNum = (i/4) + 1;
-            const t0 = [shuffled[i], shuffled[i+1]];
-            const t1 = [shuffled[i+2], shuffled[i+3] || "미지정"];
-            currentRandomMatch.push({t0, t1});
-
-            html += `
-                <div class="court-card">
-                    <div class="court-title">랜덤 ${courtNum}경기</div>
-                    <div class="match-row">
-                        <div class="team-section" id="team-rnd-${courtNum}-0" onclick="setWinner('rnd', ${courtNum}, 0)">
-                            ${t0.map(p => `<div class="player-name">${p}</div>`).join('')}
-                        </div>
-                        <div class="vs-divider">VS</div>
-                        <div class="team-section" id="team-rnd-${courtNum}-1" onclick="setWinner('rnd', ${courtNum}, 1)">
-                            ${t1.map(p => `<div class="player-name">${p}</div>`).join('')}
-                        </div>
-                    </div>
-                </div>`;
-        }
-        html += `</div>`;
-        document.getElementById('randomMatchArea').innerHTML = html;
-        results = {}; // 랜덤 생성 시 선택 초기화
     }
 
     function setWinner(r, c, winIdx) {
@@ -197,21 +165,14 @@
             const [r, c] = key.split('-');
             const winIdx = results[key];
             const lossIdx = winIdx === 0 ? 1 : 0;
-            let winTeam, lossTeam;
-
-            if(r === 'rnd') {
-                winTeam = currentRandomMatch[c-1][`t${winIdx}`];
-                lossTeam = currentRandomMatch[c-1][`t${lossIdx}`];
-            } else {
-                winTeam = fixedSchedule[r][c-1][`t${winIdx}`];
-                lossTeam = fixedSchedule[r][c-1][`t${lossIdx}`];
-            }
+            const winTeam = fullSchedule[r][c-1][`t${winIdx}`];
+            const lossTeam = fullSchedule[r][c-1][`t${lossIdx}`];
 
             winTeam.forEach(n => { const p = players.find(x => x.name === n); if(p) p.wins++; });
             lossTeam.forEach(n => { const p = players.find(x => x.name === n); if(p) p.losses++; });
         });
 
-        localStorage.setItem('kok-total-v1', JSON.stringify(players));
+        localStorage.setItem('kok-final-v1', JSON.stringify(players));
         alert("합산 완료!");
         results = {};
         location.reload();
@@ -226,19 +187,19 @@
     function showRound(r) {
         document.querySelectorAll('.r-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
-        document.getElementById(`rbtn-${r}` || `rbtn${r}`).classList.add('active');
-        if(r === 'random') document.getElementById('page-random').classList.add('active');
-        else if(r === 'result') document.getElementById('page-result').classList.add('active');
+        const targetBtn = document.getElementById(`rbtn${r}`) || document.getElementById('rbtn-result');
+        targetBtn.classList.add('active');
+        
+        if(r === 'result') document.getElementById('page-result').classList.add('active');
         else document.getElementById(`page-${r}`).classList.add('active');
         
         document.getElementById('saveBtn').style.display = r === 'result' ? 'none' : 'block';
     }
 
     function downloadExcel() {
-        const wb = XLSX.utils.table_to_book(document.getElementById("rankTable"), {sheet: "통합전적"});
+        const wb = XLSX.utils.table_to_book(document.getElementById("rankTable"), {sheet: "전체전적"});
         XLSX.writeFile(wb, `콕끼리_종합결과_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
     init();
 </script>
 </body>
-</html>
