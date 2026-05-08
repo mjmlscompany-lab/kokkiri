@@ -3,38 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 승패 기록판</title>
+    <title>🐘 콕끼리 승패 기록판 (트로피 UI)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; --excel: #27ae60; }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 90px; }
+        
+        /* 상단 탭 */
         .round-tabs { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0 10px; position: sticky; top: 0; background: var(--bg); z-index: 100; }
         .r-btn { padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd; background: white; white-space: nowrap; font-weight: bold; flex: 1; min-width: 80px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; }
         .r-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
         .r-btn.res-tab.active { background: var(--result); border-color: var(--result); }
+        
         .page-content { display: none; }
         .page-content.active { display: block; }
+        
+        /* 대진 카드 */
         .court-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         @media (min-width: 768px) { .court-grid { grid-template-columns: 1fr 1fr; } }
         .court-card { background: white; border-radius: 18px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid #eee; }
         .court-title { font-size: 1rem; font-weight: 800; color: var(--primary); margin-bottom: 12px; border-bottom: 2px solid #f0f7ff; padding-bottom: 8px; text-align: center; }
         
         .match-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .team-section { flex: 1; display: flex; flex-direction: column; gap: 5px; padding: 15px 8px; border-radius: 15px; background: #fff; border: 2px solid #eee; transition: all 0.2s; cursor: pointer; position: relative; }
-        .team-section::after { content: '터치해서 승리 선택'; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: #ccc; }
-        .team-section.winner { background: #eafaf1; border-color: var(--win); }
-        .team-section.winner::after { content: 'WINNER 🏆'; color: var(--win); font-weight: bold; }
         
-        .player-name { background: white; padding: 8px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.95rem; border: 1px solid #eee; }
-        .player-name.is-absent { color: #ccc; text-decoration: line-through; background: #f9f9f9; }
+        /* 팀 선택 영역 (버튼 역할) */
+        .team-section { flex: 1; display: flex; flex-direction: column; gap: 5px; padding: 25px 8px; border-radius: 15px; background: #fff; border: 2px solid #eee; transition: all 0.2s; cursor: pointer; position: relative; min-height: 80px; justify-content: center; }
         
+        /* 승리 시 트로피 음영 및 WINNER 문구 */
+        .team-section.winner { 
+            background-color: #eafaf1; 
+            border-color: var(--win); 
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%232ecc7122' d='M528 0H48C21.5 0 0 21.5 0 48v24c0 13.3 10.7 24 24 24s24-10.7 24-24V48h432v24c0 13.3 10.7 24 24 24s24-10.7 24-24V48c0-26.5-21.5-48-48-48zM112 128H48v24c0 13.3 10.7 24 24 24s24-10.7 24-24v-24h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24V144c0-26.5-21.5-48-48-48s-48 21.5-48 48v240c0 53 43 96 96 96h112c53 0 96-43 96-96V128h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24v-160zM400 128h-64v24c0 13.3 10.7 24 24 24s24-10.7 24-24v-24h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24V144c0-26.5-21.5-48-48-48s-48 21.5-48 48v240c0 53 43 96 96 96h112c53 0 96-43 96-96V128h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24v-160zm128-80v160c0 53-43 96-96 96H288v64h112c13.3 0 24 10.7 24 24s-10.7 24-24 24h-112c-26.5 0-48 21.5-48 48H112c-26.5 0-48-21.5-48-48H48c-13.3 0-24-10.7-24-24s10.7-24 24-24h16v-64h112c53 0 96-43 96-96V128h16v160c0 13.3-10.7 24-24 24s-24-10.7-24-24v-160h128z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+        }
+        
+        .team-section.winner::before {
+            content: 'WINNER 🏆';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--win);
+            z-index: 10;
+            text-shadow: 0 0 10px white;
+        }
+
+        /* 승리 시 선수 이름 흐릿하게 */
+        .team-section.winner .player-name { opacity: 0.3; }
+
+        .player-name { background: white; padding: 6px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.95rem; border: 1px solid #eee; z-index: 5; }
         .vs-divider { font-weight: 900; color: #ddd; font-size: 1.2rem; }
 
+        /* 하단 합산 버튼 */
         .apply-all { width: calc(100% - 20px); max-width: 500px; padding: 20px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.2rem; font-weight: bold; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 200; box-shadow: 0 5px 20px rgba(0,0,0,0.3); cursor: pointer; }
+        
+        /* 순위표 */
         .rank-table { width: 100%; border-collapse: collapse; font-size: 1.05rem; background: white; border-radius: 15px; overflow: hidden; }
         .rank-table th { padding: 15px; border-bottom: 2px solid #eee; background: #fafafa; }
         .rank-table td { padding: 15px 5px; text-align: center; border-bottom: 1px solid #f2f2f2; }
-        .excel-btn { background: var(--excel); color: white; border: none; border-radius: 12px; padding: 15px; width: 100%; font-weight: bold; font-size: 1rem; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+        .excel-btn { background: var(--excel); color: white; border: none; border-radius: 12px; padding: 15px; width: 100%; font-weight: bold; font-size: 1rem; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -44,8 +75,8 @@
 
 <div id="page-6" class="page-content">
     <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-        <h2 style="color:var(--result); margin-top:0; text-align: center;">🏆 콕끼리 순위 (포인트제) 🐘</h2>
-        <p style="text-align: center; font-size: 0.8rem; color: #888;">* 승리: 1점 / 패배: -1점 / 출석: 0.5점</p>
+        <h2 style="color:var(--result); margin-top:0; text-align: center;">🏆 콕끼리 순위 🐘</h2>
+        <p style="text-align: center; font-size: 0.8rem; color: #888;">* 승리 1 / 패배 -1 / 출석 0.5</p>
         <table class="rank-table" id="rankTable">
             <thead>
                 <tr>
@@ -58,7 +89,7 @@
             </thead>
             <tbody id="rankBody"></tbody>
         </table>
-        <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 파일로 저장하기</button>
+        <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 저장</button>
         <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-v12-score'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
@@ -134,11 +165,11 @@
                             <div class="court-title">${c}경기</div>
                             <div class="match-row">
                                 <div class="team-section" id="team-${r}-${c}-0" onclick="setWinner(${r}, ${c}, 0)">
-                                    ${match.t0.map((p, pi) => `<div class="player-name">${p}</div>`).join('')}
+                                    ${match.t0.map(p => `<div class="player-name">${p}</div>`).join('')}
                                 </div>
                                 <div class="vs-divider">VS</div>
                                 <div class="team-section" id="team-${r}-${c}-1" onclick="setWinner(${r}, ${c}, 1)">
-                                    ${match.t1.map((p, pi) => `<div class="player-name">${p}</div>`).join('')}
+                                    ${match.t1.map(p => `<div class="player-name">${p}</div>`).join('')}
                                 </div>
                             </div>
                         </div>`;
@@ -154,12 +185,11 @@
     function setWinner(r, c, winIdx) {
         const t0El = document.getElementById(`team-${r}-${c}-0`);
         const t1El = document.getElementById(`team-${r}-${c}-1`);
-        
         t0El.classList.remove('winner');
         t1El.classList.remove('winner');
         
         if (results[`${r}-${c}`] === winIdx) {
-            delete results[`${r}-${c}`]; // 이미 선택된 걸 다시 누르면 취소
+            delete results[`${r}-${c}`];
         } else {
             document.getElementById(`team-${r}-${c}-${winIdx}`).classList.add('winner');
             results[`${r}-${c}`] = winIdx;
@@ -168,14 +198,13 @@
 
     function confirmAndSave() {
         const keys = Object.keys(results);
-        if(keys.length === 0) return alert("승리팀을 선택해주세요.");
-        if(!confirm("기록된 결과를 전적에 합산할까요?")) return;
+        if(keys.length === 0) return alert("기록된 경기가 없습니다.");
+        if(!confirm("선택된 승리팀 정보를 합산할까요?")) return;
 
         keys.forEach(key => {
             const [r, c] = key.split('-');
             const winIdx = results[key];
             const lossIdx = winIdx === 0 ? 1 : 0;
-
             const winTeam = schedule[r][c-1][`t${winIdx}`];
             const lossTeam = schedule[r][c-1][`t${lossIdx}`];
 
@@ -185,8 +214,8 @@
 
         localStorage.setItem('kok-v12-score', JSON.stringify(players));
         alert("합산 완료!");
-        results = {}; // 기록 초기화
-        location.reload(); // 화면 갱신
+        results = {};
+        location.reload();
     }
 
     function renderRank() {
