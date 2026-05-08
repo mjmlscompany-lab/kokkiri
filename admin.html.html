@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 통합 기록판 (시드 최종 수정본)</title>
+    <title>🐘 콕끼리 통합 기록판 (랜덤 점수 제외)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --primary: #3498db; --win: #2ecc71; --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; --excel: #27ae60; --random: #e67e22; }
@@ -32,6 +32,7 @@
         .rank-table th { padding: 15px; border-bottom: 2px solid #eee; background: #fafafa; }
         .rank-table td { padding: 15px 5px; text-align: center; border-bottom: 1px solid #f2f2f2; }
         .excel-btn { background: var(--excel); color: white; border: none; border-radius: 12px; padding: 15px; width: 100%; font-weight: bold; font-size: 1rem; margin-top: 15px; cursor: pointer; }
+        .no-click-hint { font-size: 0.7rem; color: #999; margin-top: 5px; font-weight: normal; }
     </style>
 </head>
 <body>
@@ -47,14 +48,13 @@
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 저장</button>
-        <button onclick="if(confirm('전체 데이터를 초기화할까요?')) {localStorage.removeItem('kok-final-edit'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
+        <button onclick="if(confirm('데이터를 초기화할까요?')) {localStorage.removeItem('kok-final-no-rnd'); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 초기화</button>
     </div>
 </div>
 
 <button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
 
 <script>
-    // 이미지 데이터를 반영한 최종 시드전 및 랜덤 대진
     const fullSchedule = {
         1: [
             {t0:["구구","단우"], t1:["로토","구름"]},
@@ -77,14 +77,14 @@
             {t0:["쿠쿠","따순"], t1:["현이","라임"]},
             {t0:["리버","극선호"], t1:["동이","우지"]}
         ],
-        4: [ // 랜덤 4경기
+        4: [ // 랜덤 4경기 (클릭 차단 대상)
             {t0:["구구","우지"], t1:["단우","극선호"]},
             {t0:["로토","리버"], t1:["구름","따순"]},
             {t0:["이름","선호"], t1:["백구","곽동칠"]},
             {t0:["바유","현이"], t1:["슝슝이","라임"]},
             {t0:["후니","새로"], t1:["제리","쿠쿠"]}
         ],
-        5: [ // 랜덤 5경기
+        5: [ // 랜덤 5경기 (클릭 차단 대상)
             {t0:["구구","동이"], t1:["단우","새로"]},
             {t0:["로토","라임"], t1:["구름","곽동칠"]},
             {t0:["이름","쿠쿠"], t1:["백구","리버"]},
@@ -94,7 +94,7 @@
     };
 
     const playerList = ["구구", "단우", "로토", "구름", "이름", "백구", "새로", "바유", "슝슝이", "쿠쿠", "제리", "후니", "현이", "따순", "라임", "곽동칠", "리버", "우지", "동이", "극선호", "선호"];
-    let players = JSON.parse(localStorage.getItem('kok-final-edit')) || playerList.map(name => ({name, wins: 0, losses: 0}));
+    let players = JSON.parse(localStorage.getItem('kok-final-no-rnd')) || playerList.map(name => ({name, wins: 0, losses: 0}));
     let results = {}; 
 
     function init() {
@@ -117,8 +117,8 @@
             fullSchedule[r].forEach((match, idx) => {
                 const c = idx + 1;
                 grid += `
-                    <div class="court-card">
-                        <div class="court-title">${isRandom ? '랜덤 ' : ''}${c}경기</div>
+                    <div class="court-card" style="${isRandom ? 'opacity:0.9;' : ''}">
+                        <div class="court-title">${isRandom ? '랜덤 ' : ''}${c}경기${isRandom ? '<div class="no-click-hint">점수 미반영</div>' : ''}</div>
                         <div class="match-row">
                             <div class="team-section" id="team-${r}-${c}-0" onclick="setWinner(${r}, ${c}, 0)">
                                 ${match.t0.map(p => `<div class="player-name">${p}</div>`).join('')}
@@ -146,6 +146,9 @@
     }
 
     function setWinner(r, c, winIdx) {
+        // 4, 5세트는 승리 선택 기능을 완전히 차단
+        if (r >= 4) return;
+
         const t0El = document.getElementById(`team-${r}-${c}-0`);
         const t1El = document.getElementById(`team-${r}-${c}-1`);
         t0El.classList.remove('winner');
@@ -156,8 +159,8 @@
 
     function confirmAndSave() {
         const keys = Object.keys(results);
-        if(keys.length === 0) return alert("승리팀을 선택해주세요.");
-        if(!confirm("선택한 결과를 전적에 합산할까요?")) return;
+        if(keys.length === 0) return alert("시드전(1~3R) 승리팀을 선택해주세요.");
+        if(!confirm("선택한 시드전 결과를 전적에 합산할까요?")) return;
 
         keys.forEach(key => {
             const [r, c] = key.split('-');
@@ -170,7 +173,7 @@
             lossTeam.forEach(n => { const p = players.find(x => x.name === n); if(p) p.losses++; });
         });
 
-        localStorage.setItem('kok-final-edit', JSON.stringify(players));
+        localStorage.setItem('kok-final-no-rnd', JSON.stringify(players));
         alert("합산 완료!");
         results = {};
         location.reload();
@@ -189,7 +192,7 @@
         targetBtn.classList.add('active');
         if(r === 'result') document.getElementById('page-result').classList.add('active');
         else document.getElementById(`page-${r}`).classList.add('active');
-        document.getElementById('saveBtn').style.display = r === 'result' ? 'none' : 'block';
+        document.getElementById('saveBtn').style.display = (r === 'result' || r >= 4) ? 'none' : 'block';
     }
 
     function downloadExcel() {
