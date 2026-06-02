@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>👑 콕끼리 통제 총괄판 (5세트 / 세트당 6경기 증설판)</title>
+    <title>👑 콕끼리 통제 총괄판 (안전 제일 시스템)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { 
@@ -12,7 +12,7 @@
         }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 90px; }
         .round-tabs { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0 10px; position: sticky; top: 0; background: var(--bg); z-index: 100; }
-        .r-btn { padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd; background: white; white-space: nowrap; font-weight: bold; flex: 1; min-width: 70px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; }
+        .r-btn { padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd; background: white; white-space: nowrap; font-weight: bold; flex: 1; min-width: 70px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; text-align: center; }
         .r-btn.same.active { background: var(--same-seed); color: white; border-color: var(--same-seed); }
         .r-btn.mix.active { background: var(--mix-seed); color: white; border-color: var(--mix-seed); }
         .r-btn.rnd.active { background: var(--rnd-seed); color: var(--dark); border-color: var(--rnd-seed); }
@@ -63,14 +63,14 @@
         .m-btn-confirm { background: var(--win); color: white; }
         
         .sync-status { background: #eef5fc; padding: 8px; border-radius: 10px; text-align: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; color: #2980b9; display: flex; justify-content: center; gap: 10px; align-items: center;}
-        .force-btn { background: #e74c3c; color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .force-btn { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="sync-status">
-    <span id="syncStatus">📡 서버 연결 확인 중...</span>
-    <button class="force-btn" onclick="handleClearAll()">⚠️ 데이터 완전 초기화</button>
+    <span id="syncStatus">✅ 로컬 보호 렌더링 완료</span>
+    <button class="force-btn" onclick="handleClearAll()">🚨 서버 완전히 초기화하기</button>
 </div>
 <div class="round-tabs" id="roundTabs"></div>
 <div id="mainContainer"></div>
@@ -83,11 +83,10 @@
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 저장</button>
-        <button onclick="handleClearAll()" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#666; background:#eee; font-weight:bold; cursor:pointer;">🐘 시스템 완전 리셋</button>
     </div>
 </div>
 
-<button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
+<button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 象</button>
 
 <div class="modal-overlay" id="winModal">
     <div class="modal-content">
@@ -104,32 +103,39 @@
 <script>
     const DB_URL = "https://kvdb.io/jerry_kokkiri_2026/live_data";
 
+    // 명 : 닉네임 수기 관리 매핑 테이블 (여기서 수정하면 전체 적용)
+    const playerMap = {
+        1: "구구", 2: "단우", 3: "로토", 4: "구름", 5: "이름", 6: "백구",
+        7: "새로", 8: "바유", 9: "슝슝이", 10: "쿠쿠", 11: "제리", 12: "후니",
+        13: "현이", 14: "따순", 15: "라임", 16: "곽동칠", 17: "리버", 18: "우지",
+        19: "동이", 20: "극선호", 21: "선호", 22: "아몬드", 23: "임시1", 24: "임시2"
+    };
+
     const defaultSchedule = {
         1: [
-            {t0:["구구","단우"], t1:["로토","구름"]},{t0:["이름","백구"], t1:["새로","바유"]},{t0:["슝슝이","쿠쿠"], t1:["제리","후니"]},
-            {t0:["극선호","따순"], t1:["라임","현이"]},{t0:["곽동칠","리버"], t1:["우지","아몬드"]},{t0:["동이","임시1"], t1:["선호","임시2"]}
+            {t0:[1,2], t1:[3,4]}, {t0:[5,6], t1:[7,8]}, {t0:[9,10], t1:[11,12]},
+            {t0:[20,14], t1:[15,13]}, {t0:[16,17], t1:[18,22]}, {t0:[19,23], t1:[21,24]}
         ],
         2: [
-            {t0:["구구","로토"], t1:["단우","선호"]},{t0:["이름","구름"], t1:["새로","백구"]},{t0:["슝슝이","제리"], t1:["후니","바유"]},
-            {t0:["쿠쿠","현이"], t1:["따순","라임"]},{t0:["곽동칠","우지"], t1:["아몬드","리버"]},{t0:["동이","극선호"], t1:["임시1","임시2"]}
+            {t0:[1,3], t1:[2,21]}, {t0:[5,4], t1:[7,6]}, {t0:[9,11], t1:[12,8]},
+            {t0:[10,13], t1:[14,15]}, {t0:[16,18], t1:[22,17]}, {t0:[19,20], t1:[23,24]}
         ],
         3: [
-            {t0:["구구","선호"], t1:["로토","단우"]},{t0:["이름","바유"], t1:["백구","구름"]},{t0:["새로","제리"], t1:["후니","슝슝이"]},
-            {t0:["쿠쿠","따순"], t1:["현이","라임"]},{t0:["리버","우지"], t1:["아몬드","극선호"]},{t0:["동이","임시2"], t1:["임시1","곽동칠"}
+            {t0:[1,21], t1:[3,2]}, {t0:[5,8], t1:[6,4]}, {t0:[7,11], t1:[12,9]},
+            {t0:[10,14], t1:[13,15]}, {t0:[17,18], t1:[22,20]}, {t0:[19,24], t1:[23,16]}
         ],
         4: [
-            {t0:["구구","우지"], t1:["단우","극선호"]},{t0:["로토","리버"], t1:["구름","따순"]},{t0:["이름","선호"], t1:["백구","곽동칠"]},
-            {t0:["바유","현이"], t1:["슝슝이","라임"]},{t0:["후니","새로"], t1:["제리","쿠쿠"]},{t0:["동이","아몬드"], t1:["임시1","임시2"]}
+            {t0:[1,18], t1:[2,20]}, {t0:[3,17], t1:[4,14]}, {t0:[5,21], t1:[6,16]},
+            {t0:[8,13], t1:[9,15]}, {t0:[12,7], t1:[11,10]}, {t0:[19,22], t1:[23,24]}
         ],
         5: [
-            {t0:["구구","아몬드"], t1:["단우","새로"]},{t0:["로토","라임"], t1:["구름","곽동칠"]},{t0:["이름","쿠쿠"], t1:["백구","리버"]},
-            {t0:["바유","후니"], t1:["슝슝이","제리"]},{t0:["현이","선호"], t1:["따순","극선호"]},{t0:["동이","우지"], t1:["임시1","임시2"]}
+            {t0:[1,22], t1:[2,7]}, {t0:[3,15], t1:[4,16]}, {t0:[5,10], t1:[6,17]},
+            {t0:[8,12], t1:[9,11]}, {t0:[13,21], t1:[14,20]}, {t0:[19,18], t1:[23,24]}
         ]
     };
 
     let fullSchedule = JSON.parse(JSON.stringify(defaultSchedule));
-    const playerList = ["구구", "단우", "로토", "구름", "이름", "백구", "새로", "바유", "슝슝이", "쿠쿠", "제리", "후니", "현이", "따순", "라임", "곽동칠", "리버", "우지", "동이", "극선호", "선호", "아몬드", "임시1", "임시2"];
-    let players = playerList.map(name => ({name, wins: 0, losses: 0}));
+    let players = Object.values(playerMap).map(name => ({name, wins: 0, losses: 0}));
     let results = {};
     let playingStatus = {};
     let activeModalCallback = null;
@@ -138,41 +144,6 @@
     function getChosung(str) {
         if(!str) return "";
         let res = ""; for (let i = 0; i < str.length; i++) { let code = str.charCodeAt(i) - 44032; if (code >= 0 && code <= 11172) { res += CHO_SEONG[Math.floor(code / 588)]; } else { res += str.charAt(i); } } return res;
-    }
-
-    // [핵심] 로드할 때 서버 데이터를 먼저 안전하게 긁어오는 함수
-    async function fetchDataFromServer() {
-        const statusEl = document.getElementById('syncStatus');
-        try {
-            const response = await fetch(DB_URL);
-            if (response.ok) {
-                const data = await response.json();
-                if (data && data.schedule && data.schedule["1"] && data.schedule["1"].length === 6) {
-                    fullSchedule = data.schedule;
-                    players = data.players || players;
-                    results = data.results || {};
-                    playingStatus = data.playing || {};
-                    if(statusEl) statusEl.innerText = "✅ 서버 최신 데이터 로드 완료!";
-                } else {
-                    if(statusEl) statusEl.innerText = "💡 서버에 데이터가 없거나 유효하지 않아 기본 스케줄로 시작합니다.";
-                }
-            }
-        } catch (e) {
-            if(statusEl) statusEl.innerText = "📡 서버 연결 실패 (로컬 모드로 가동)";
-        }
-        init(); // 다운로드가 끝나든 실패하든 무조건 화면 그리기 강제 집행!
-    }
-
-    async function uploadToServer() {
-        const statusEl = document.getElementById('syncStatus');
-        if(statusEl) statusEl.innerText = "⏳ 서버에 동기화 중...";
-        const packageData = { schedule: fullSchedule, players: players, results: results, playing: playingStatus };
-        try {
-            await fetch(DB_URL, { method: 'POST', body: JSON.stringify(packageData) });
-            if(statusEl) statusEl.innerText = "✅ 서버 동기화 완료! 회원 화면 즉시 반영";
-        } catch (e) {
-            if(statusEl) statusEl.innerText = "⚠️ 서버 전송 실패 (오프라인 보존)";
-        }
     }
 
     function init() {
@@ -205,6 +176,8 @@
                     const isT0Win = results[`${r}-${c}`] === 0 ? 'winner' : '';
                     const isT1Win = results[`${r}-${c}`] === 1 ? 'winner' : '';
 
+                    const getPName = (p) => typeof p === 'number' ? (playerMap[p] || `선수${p}`) : p;
+
                     grid += `
                         <div class="court-card ${isPlaying} ${r<=2?'set-same':(r<=4?'set-mix':'set-rnd')}" id="card-${r}-${c}">
                             <div class="court-header" onclick="togglePlaying(${r},${c})">
@@ -214,21 +187,21 @@
                             <div class="match-body">
                                 <div class="match-row">
                                     <div class="team-section ${isT0Win}" id="team-${r}-${c}-0" onclick="handleTeamClick(event, ${r}, ${c}, 0)">
-                                        ${match.t0.map((p, pIdx) => `
+                                        ${match.t0 ? match.t0.map((p, pIdx) => `
                                             <div class="player-wrapper">
-                                                <input type="text" class="player-input" value="${p}" oninput="searchPlayer(${r},${c},0,${pIdx},this)" onfocus="searchPlayer(${r},${c},0,${pIdx},this)" onblur="hideSuggestDelayed(${r},${c},0,${pIdx})" onclick="event.stopPropagation();">
+                                                <input type="text" class="player-input" value="${getPName(p)}" oninput="searchPlayer(${r},${c},0,${pIdx},this)" onfocus="searchPlayer(${r},${c},0,${pIdx},this)" onblur="hideSuggestDelayed(${r},${c},0,${pIdx})" onclick="event.stopPropagation();">
                                                 <div class="search-suggest" id="suggest-${r}-${c}-0-${pIdx}"></div>
                                             </div>
-                                        `).join('')}
+                                        `).join('') : ''}
                                     </div>
                                     <div class="vs-divider">VS</div>
                                     <div class="team-section ${isT1Win}" id="team-${r}-${c}-1" onclick="handleTeamClick(event, ${r}, ${c}, 1)">
-                                        ${match.t1.map((p, pIdx) => `
+                                        ${match.t1 ? match.t1.map((p, pIdx) => `
                                             <div class="player-wrapper">
-                                                <input type="text" class="player-input" value="${p}" oninput="searchPlayer(${r},${c},1,${pIdx},this)" onfocus="searchPlayer(${r},${c},1,${pIdx},this)" onblur="hideSuggestDelayed(${r},${c},1,${pIdx})" onclick="event.stopPropagation();">
+                                                <input type="text" class="player-input" value="${getPName(p)}" oninput="searchPlayer(${r},${c},1,${pIdx},this)" onfocus="searchPlayer(${r},${c},1,${pIdx},this)" onblur="hideSuggestDelayed(${r},${c},1,${pIdx})" onclick="event.stopPropagation();">
                                                 <div class="search-suggest" id="suggest-${r}-${c}-1-${pIdx}"></div>
                                             </div>
-                                        `).join('')}
+                                        `).join('') : ''}
                                     </div>
                                 </div>
                             </div>
@@ -243,13 +216,49 @@
         renderRank();
     }
 
+    async function fetchDataFromServer() {
+        const statusEl = document.getElementById('syncStatus');
+        try {
+            const response = await fetch(DB_URL);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.schedule && data.schedule["1"]) {
+                    fullSchedule = data.schedule;
+                    
+                    // 명단 변동 에러 방지: 기존 전적 데이터가 있으면 합치고, 없으면 신규 생성
+                    const serverPlayers = data.players || [];
+                    players = Object.values(playerMap).map(name => {
+                        const exist = serverPlayers.find(sp => sp.name === name);
+                        return exist ? exist : {name, wins:0, losses:0};
+                    });
+                    
+                    results = data.results || {};
+                    playingStatus = data.playing || {};
+                    if(statusEl) statusEl.innerText = "✅ 서버 실시간 연동 성공";
+                    init();
+                }
+            }
+        } catch (e) {
+            if(statusEl) statusEl.innerText = "⚠️ 서버 통신 보류 (로컬 데이터 구동)";
+        }
+    }
+
+    async function uploadToServer() {
+        const packageData = { schedule: fullSchedule, players: players, results: results, playing: playingStatus };
+        try {
+            await fetch(DB_URL, { method: 'POST', body: JSON.stringify(packageData) });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
     function searchPlayer(r, c, teamIdx, playerIdx, inputEl) {
         const text = inputEl.value.trim().toLowerCase();
         const suggestBox = document.getElementById(`suggest-${r}-${c}-${teamIdx}-${playerIdx}`);
         if(!suggestBox) return;
         if(!text) { suggestBox.style.display = "none"; return; }
         const inputChosung = getChosung(text);
-        const matched = playerList.filter(name => name.toLowerCase().includes(text) || getChosung(name).includes(inputChosung));
+        const matched = Object.values(playerMap).filter(name => name.toLowerCase().includes(text) || getChosung(name).includes(inputChosung));
         if(matched.length > 0) {
             suggestBox.innerHTML = matched.map(name => `<div class="suggest-item" onmousedown="selectSuggestedPlayer(${r},${c},${teamIdx},${playerIdx},'${name}')">${name}</div>`).join('');
             suggestBox.style.display = "block";
@@ -263,8 +272,17 @@
         }
     }
 
-    function hideSuggestDelayed(r, c, teamIdx, playerIdx) { setTimeout(() => { const el = document.getElementById(`suggest-${r}-${c}-${teamIdx}-${playerIdx}`); if(el) el.style.display = "none"; }, 200); }
-    function handleTeamClick(e, r, c, teamIdx) { if(e.target.classList.contains('player-input')) return; setWinner(r, c, teamIdx); }
+    function hideSuggestDelayed(r, c, teamIdx, playerIdx) { 
+        setTimeout(() => { 
+            const el = document.getElementById(`suggest-${r}-${c}-${teamIdx}-${playerIdx}`); 
+            if(el) el.style.display = "none"; 
+        }, 200); 
+    }
+    
+    function handleTeamClick(e, r, c, teamIdx) { 
+        if(e.target.classList.contains('player-input')) return; 
+        setWinner(r, c, teamIdx); 
+    }
 
     function togglePlaying(r, c) {
         const key = `${r}-${c}`;
@@ -278,7 +296,9 @@
             init(); uploadToServer(); return;
         }
         if(fullSchedule && fullSchedule[r] && fullSchedule[r][c-1]) {
-            const currentTeamPlayers = fullSchedule[r][c-1][`t${winIdx}`].join(', ');
+            const getPName = (p) => typeof p === 'number' ? (playerMap[p] || `선수${p}`) : p;
+            const currentTeamPlayers = fullSchedule[r][c-1][`t${winIdx}`].map(getPName).join(', ');
+            
             document.getElementById('modalTeamNames').innerText = currentTeamPlayers;
             document.getElementById('winModal').style.display = 'flex';
             activeModalCallback = function() {
@@ -288,6 +308,7 @@
             };
         }
     }
+    
     function closeWinModal() { document.getElementById('winModal').style.display = 'none'; }
     document.getElementById('modalConfirmBtn').onclick = () => { if(activeModalCallback) activeModalCallback(); closeWinModal(); };
 
@@ -295,11 +316,13 @@
         if(Object.keys(results).length === 0) return alert("기록할 승리팀이 없습니다.");
         if(!confirm("모든 결과를 최종 전적에 합산할까요?")) return;
 
+        const getPName = (p) => typeof p === 'number' ? (playerMap[p] || `선수${p}`) : p;
+
         Object.keys(results).forEach(key => {
             const [r, c] = key.split('-'); const winIdx = results[key];
             if(fullSchedule && fullSchedule[r] && fullSchedule[r][c-1]) {
-                fullSchedule[r][c-1][`t${winIdx}`].forEach(n => { const p = players.find(x => x.name === n); if(p) p.wins++; });
-                fullSchedule[r][c-1][`t${winIdx===0?1:0}`].forEach(n => { const p = players.find(x => x.name === n); if(p) p.losses++; });
+                fullSchedule[r][c-1][`t${winIdx}`].map(getPName).forEach(n => { const p = players.find(x => x.name === n); if(p) p.wins++; });
+                fullSchedule[r][c-1][`t${winIdx===0?1:0}`].map(getPName).forEach(n => { const p = players.find(x => x.name === n); if(p) p.losses++; });
             }
         });
 
@@ -309,17 +332,21 @@
     }
 
     function handleClearAll() {
-        if(!confirm('서버와 로컬 데이터를 모두 밀어버리고 5세트 6경기 시스템으로 완전 초기화하시겠습니까?')) return;
+        if(!confirm('🚨 정말 서버에 꼬인 모든 기록을 밀어버리고 완전히 초기화할까요?')) return;
         fullSchedule = JSON.parse(JSON.stringify(defaultSchedule));
-        players = playerList.map(name => ({name, wins: 0, losses: 0}));
+        players = Object.values(playerMap).map(name => ({name, wins: 0, losses: 0}));
         results = {}; playingStatus = {};
         init(); uploadToServer();
-        alert('모든 데이터가 깔끔하게 초기화되었습니다!');
+        alert('서버 정화 완료! 정상 작동합니다.');
     }
 
     function renderRank() {
         const getPoint = (p) => (p.wins * 1) + (p.losses * -1) + 0.5;
-        const activePlayers = players.filter(p => p.wins > 0 || p.losses > 0).sort((a,b) => getPoint(b) - getPoint(a));
+        const currentNames = Object.values(playerMap);
+        const activePlayers = players
+            .filter(p => currentNames.includes(p.name) && (p.wins > 0 || p.losses > 0))
+            .sort((a,b) => getPoint(b) - getPoint(a));
+
         const bodyEl = document.getElementById('rankBody');
         if(bodyEl) {
             bodyEl.innerHTML = activePlayers.map((p, i) => `<tr><td>${i+1}</td><td><strong>${p.name}</strong></td><td>${p.wins}</td><td>${p.losses}</td><td style="font-weight:bold; color:#e91e63;">${getPoint(p).toFixed(1)}</td></tr>`).join('');
@@ -335,10 +362,8 @@
     }
     function downloadExcel() { const wb = XLSX.utils.table_to_book(document.getElementById("rankTable"), {sheet:"전적"}); XLSX.writeFile(wb, `콕끼리_방장통제기록.xlsx`); }
     
-    // 페이지 켜지면 무조건 서버에 가서 긁어오기 작동
-    window.onload = function() {
-        fetchDataFromServer();
-    };
+    init();
+    fetchDataFromServer();
 </script>
 </body>
 </html>
