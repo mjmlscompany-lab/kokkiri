@@ -10,7 +10,7 @@
             --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; 
             --admin: #34495e; --excel: #27ae60; --win: #2ecc71;       
             --same-seed: #2980b9; --mix-seed: #e91e63; --rnd-seed: #f1c40f; 
-            --playing: #ff85a2; /* 핑크색 */
+            --playing: #ff85a2;
         }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 90px; }
         .round-tabs { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0 10px; position: sticky; top: 0; background: var(--bg); z-index: 100; }
@@ -28,10 +28,7 @@
         .court-card.playing { border-color: var(--playing); box-shadow: 0 4px 15px rgba(255, 133, 162, 0.3); background: #fffdfd; }
         .court-header { background: #eef5fc; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s ease; user-select: none; }
         .court-title { font-size: 1rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 5px; }
-        
-        /* 뱃지 스타일 */
         .status-text { font-size: 0.8rem; font-weight: bold; color: #777; background: white; padding: 3px 10px; border-radius: 12px; border: 1px solid #ddd; }
-        /* 진행중일 때 뱃지 핑크색 적용 */
         .court-card.playing .status-text { background: var(--playing); color: white; border-color: var(--playing); }
         
         .match-body { padding: 15px 15px 0 15px; }
@@ -106,9 +103,7 @@
         function getChosung(str) { let res = ""; for (let i = 0; i < str.length; i++) { let code = str.charCodeAt(i) - 44032; if (code >= 0 && code <= 11172) { res += CHO_SEONG[Math.floor(code / 588)]; } else { res += str.charAt(i); } } return res; }
 
         function toggleLock(r) {
-            if(setConfirmed[r]) {
-                if(!confirm("대진 확정을 해제하시겠습니까?")) return;
-            }
+            if(setConfirmed[r]) { if(!confirm("대진 확정을 해제하시겠습니까?")) return; }
             setConfirmed[r] = !setConfirmed[r];
             localStorage.setItem('kok-set-confirmed', JSON.stringify(setConfirmed));
             location.reload();
@@ -117,7 +112,6 @@
         function init() { 
             playerList = players.map(p => p.name);
             const rTabs = document.getElementById('roundTabs'), main = document.getElementById('mainContainer');
-            
             const roundTypes = ['same', 'same', 'mix', 'mix', 'rnd'];
 
             for(let r=1; r<=5; r++) {
@@ -185,7 +179,10 @@
 
         function togglePlaying(r, c) {
             const key = `${r}-${c}`, card = document.getElementById(`card-${r}-${c}`), textEl = document.getElementById(`status-${r}-${c}`);
-            if (playingStatus[key]) { delete playingStatus[key]; card.classList.remove('playing'); textEl.innerText = '대기중'; } else { playingStatus[key] = true; card.classList.add('playing'); textEl.innerText = '⏳ 진행중'; }
+            if (playingStatus[key]) {
+                if(!confirm("진행중인 경기를 대기중으로 돌리시겠습니까?")) return;
+                delete playingStatus[key]; card.classList.remove('playing'); textEl.innerText = '대기중';
+            } else { playingStatus[key] = true; card.classList.add('playing'); textEl.innerText = '⏳ 진행중'; }
             localStorage.setItem('kok-playing-status-nornd', JSON.stringify(playingStatus));
         }
 
@@ -199,6 +196,7 @@
             openWinModal(fullSchedule[r][c-1][`t${winIdx}`].join(', '), function() {
                 results[`${r}-${c}`] = winIdx; localStorage.setItem('kok-saved-results', JSON.stringify(results));
                 const targetTeamEl = document.getElementById(`team-${r}-${c}-${winIdx}`); targetTeamEl.classList.add('winner');
+                // 승리 확정 시 진행중 상태 강제 종료
                 if (playingStatus[`${r}-${c}`]) togglePlaying(r, c);
                 setTimeout(() => { targetTeamEl.classList.remove('winner'); }, 500);
             });
