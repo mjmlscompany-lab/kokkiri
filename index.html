@@ -12,7 +12,7 @@
             --result: #9b59b6; 
             --admin: #34495e;     
             --excel: #27ae60; 
-            --win: #2ecc71;       
+            --win: #2ecc71;        
             --same-seed: #2980b9;    
             --mix-seed: #e91e63;     
             --rnd-seed: #f1c40f;     
@@ -84,7 +84,7 @@
         <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
             <h2 style="color:var(--result); margin-top:0; text-align: center;">🏆 콕끼리 명예의 전당 🐘</h2>
             <div class="mvp-container">
-                <div class="mvp-title">👑 오늘의 MVP 전승자 (5승)</div>
+                <div class="mvp-title">👑 오늘의 MVP (5승 달성자)</div>
                 <div class="mvp-badge-wrapper" id="mvpContainer"></div>
             </div>
         </div>
@@ -254,7 +254,7 @@
             const adminBtn = document.createElement('button');
             adminBtn.className = 'r-btn admin-tab';
             adminBtn.id = 'rbtn-admin';
-            adminBtn.innerHTML = '⚙️ 설정'; // ⚙️ 설정 아이콘으로 변경
+            adminBtn.innerHTML = '⚙️ 설정';
             adminBtn.onclick = () => showRound('admin');
             rTabs.appendChild(adminBtn);
 
@@ -395,19 +395,19 @@
         function renderRank() {
             const getPoint = (p) => (p.wins * 1) + (p.losses * -1) + 0.5;
             const activePlayers = players.filter(p => p.wins > 0 || p.losses > 0);
-            const mvpPlayers = activePlayers.filter(p => p.wins === 5 && p.losses === 0);
+            // 조건 수정: 5승 0패 -> 5승만 체크
+            const mvpPlayers = activePlayers.filter(p => p.wins === 5);
             const mvpContainer = document.getElementById('mvpContainer');
             if (mvpPlayers.length > 0) {
                 mvpContainer.innerHTML = mvpPlayers.map(p => `<div class="mvp-badge">🏅 ${p.name} (5승)</div>`).join('');
             } else {
-                mvpContainer.innerHTML = `<span style="font-size:0.85rem; color:#999; font-weight:bold;">오늘 5전 전승자는 없습니다. 다음 기회에! 👍</span>`;
+                mvpContainer.innerHTML = `<span style="font-size:0.85rem; color:#999; font-weight:bold;">오늘 5승 달성자는 아직 없습니다. 분발하세요! 👍</span>`;
             }
             const sorted = [...activePlayers].sort((a, b) => getPoint(b) - getPoint(a));
             document.getElementById('rankBody').innerHTML = sorted.map((p, i) => `<tr><td>${i+1}</td><td><strong>${p.name}</strong></td><td>${p.wins}</td><td>${p.losses}</td><td style="font-weight:bold; color:var(--mix-seed);">${getPoint(p).toFixed(1)}</td></tr>`).join('');
         }
 
         function showRound(r) {
-            // 🔒 비밀번호 체크 기능
             if(r === 'admin') {
                 const pw = prompt("설정 접근 비밀번호를 입력하세요.");
                 if(pw !== "921512") {
