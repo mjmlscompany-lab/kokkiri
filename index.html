@@ -48,6 +48,8 @@
         .rank-table th { padding: 15px; border-bottom: 2px solid #eee; background: #fafafa; }
         .rank-table td { padding: 15px; text-align: center; border-bottom: 1px solid #f2f2f2; }
         .excel-btn { background: var(--excel); color: white; border: none; border-radius: 12px; padding: 15px; width: 100%; font-weight: bold; font-size: 1rem; margin-top: 15px; cursor: pointer; }
+        .data-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .data-btn { padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; color: white; }
         .lock-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 1rem; }
         .lock-btn.locked { background: #27ae60; color: white; }
         .lock-btn.unlocked { background: #e74c3c; color: white; }
@@ -79,6 +81,11 @@
             <h2 style="color:var(--admin); margin-top:0; text-align: center;">⚙️ 설정 및 통합 순위표</h2>
             <table class="rank-table" id="rankTable"><thead><tr><th>이름</th><th>승</th><th>패</th></tr></thead><tbody id="rankBody"></tbody></table>
             <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 저장</button>
+            <div class="data-btns">
+                <button class="data-btn" style="background:#3498db" onclick="backupData()">💾 데이터 백업</button>
+                <button class="data-btn" style="background:#e67e22" onclick="document.getElementById('fileInput').click()">📂 데이터 불러오기</button>
+                <input type="file" id="fileInput" style="display:none" onchange="restoreData(event)">
+            </div>
             <button onclick="if(confirm('모든 기록과 바뀐 대진 이름을 초기화할까요?')) {localStorage.clear(); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 전체 초기화</button>
         </div>
     </div>
@@ -100,6 +107,32 @@
         let fullSchedule = JSON.parse(localStorage.getItem('kok-custom-schedule')) || defaultSchedule;
         let setConfirmed = JSON.parse(localStorage.getItem('kok-set-confirmed')) || {};
         let playerList = [], players = JSON.parse(localStorage.getItem('kok-final-no-rnd')) || [], results = JSON.parse(localStorage.getItem('kok-saved-results')) || {}, playingStatus = JSON.parse(localStorage.getItem('kok-playing-status-nornd')) || {}, activeModalCallback = null;
+
+        // 데이터 백업 및 복원 함수 추가
+        function backupData() {
+            const data = { schedule: fullSchedule, confirmed: setConfirmed, players: players, results: results, playing: playingStatus };
+            const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `콕끼리_데이터_${new Date().toISOString().slice(0,10)}.json`; a.click();
+        }
+
+        function restoreData(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    localStorage.setItem('kok-custom-schedule', JSON.stringify(data.schedule));
+                    localStorage.setItem('kok-set-confirmed', JSON.stringify(data.confirmed));
+                    localStorage.setItem('kok-final-no-rnd', JSON.stringify(data.players));
+                    localStorage.setItem('kok-saved-results', JSON.stringify(data.results));
+                    localStorage.setItem('kok-playing-status-nornd', JSON.stringify(data.playing));
+                    location.reload();
+                } catch(err) { alert("잘못된 파일 형식입니다."); }
+            };
+            reader.readAsText(file);
+        }
 
         const CHO_SEONG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
         function getChosung(str) { let res = ""; for (let i = 0; i < str.length; i++) { let code = str.charCodeAt(i) - 44032; if (code >= 0 && code <= 11172) { res += CHO_SEONG[Math.floor(code / 588)]; } else { res += str.charAt(i); } } return res; }
@@ -214,15 +247,9 @@
                 const card = document.getElementById(`card-${r}-${c}`);
                 const statusEl = document.getElementById(`status-${r}-${c}`);
 
-                // 승리 팀 하이라이트 표시
                 targetTeamEl.classList.add('winner');
+                setTimeout(() => { targetTeamEl.classList.remove('winner'); }, 500);
                 
-                // 0.5초 후 하이라이트 제거
-                setTimeout(() => { 
-                    targetTeamEl.classList.remove('winner'); 
-                }, 500);
-                
-                // 종료 상태로 시각화 (카드 상태 유지)
                 delete playingStatus[`${r}-${c}`];
                 card.classList.remove('playing');
                 card.classList.add('finished');
