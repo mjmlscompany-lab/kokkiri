@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 통합 기록판 (최종 수정본)</title>
+    <title>🐘 콕끼리 통합 기록판 (대진 확정 버전)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { 
@@ -35,6 +35,7 @@
         .team-section.winner { background-color: #ebf9eb !important; border-color: var(--win) !important; }
         .player-wrapper { position: relative; width: calc(100% - 16px); margin: 0 auto; }
         .player-input { background: white; padding: 6px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.95rem; border: 1px solid #eee; font-family: inherit; width: 100%; box-sizing: border-box; color: var(--dark); transition: all 0.15s ease; }
+        .player-input:disabled { background: #f9f9f9; color: #999; cursor: not-allowed; }
         .search-suggest { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #3498db; border-radius: 8px; max-height: 150px; overflow-y: auto; z-index: 999; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-top: 2px; }
         .suggest-item { padding: 8px 10px; font-size: 0.85rem; text-align: center; cursor: pointer; border-bottom: 1px solid #eee; font-weight: bold; color: var(--dark); }
         .vs-divider { font-weight: 900; color: #ddd; font-size: 1.2rem; user-select: none; }
@@ -43,9 +44,9 @@
         .rank-table th { padding: 15px; border-bottom: 2px solid #eee; background: #fafafa; }
         .rank-table td { padding: 15px; text-align: center; border-bottom: 1px solid #f2f2f2; }
         .excel-btn { background: var(--excel); color: white; border: none; border-radius: 12px; padding: 15px; width: 100%; font-weight: bold; font-size: 1rem; margin-top: 15px; cursor: pointer; }
-        .lock-btn { width:100%; padding:14px; border:none; border-radius:12px; font-weight:bold; cursor:pointer; margin-bottom:15px; }
-        .lock-btn.locked { background:#27ae60; color:white; }
-        .lock-btn.unlocked { background:#e74c3c; color:white; }
+        .lock-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 1rem; }
+        .lock-btn.locked { background: #27ae60; color: white; }
+        .lock-btn.unlocked { background: #e74c3c; color: white; }
         .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); z-index: 9999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .modal-content { background: white; border-radius: 24px; padding: 25px 20px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .modal-icon { font-size: 2.2rem; margin-bottom: 8px; }
@@ -102,9 +103,7 @@
         function toggleLock(r) {
             setConfirmed[r] = !setConfirmed[r];
             localStorage.setItem('kok-set-confirmed', JSON.stringify(setConfirmed));
-            const btn = document.getElementById(`lock-btn-${r}`);
-            btn.className = `lock-btn ${setConfirmed[r] ? 'locked' : 'unlocked'}`;
-            btn.innerHTML = setConfirmed[r] ? '🔓 대진 확정 해제' : '🔒 대진 확정';
+            location.reload();
         }
 
         function init() { 
@@ -114,8 +113,10 @@
                 const btn = document.createElement('button');
                 btn.className = `r-btn ${r===1?'active':''}`; btn.id = `rbtn${r}`; btn.innerText = (r===5) ? `5세트(R)` : `${r}세트`; btn.onclick = () => showRound(r); rTabs.appendChild(btn);
                 const rPage = document.createElement('div'); rPage.className = `page-content ${r===1?'active':''}`; rPage.id = `page-${r}`;
+                
                 const isLocked = !!setConfirmed[r];
                 rPage.innerHTML = `<button id="lock-btn-${r}" class="lock-btn ${isLocked ? 'locked' : 'unlocked'}" onclick="toggleLock(${r})">${isLocked ? '🔓 대진 확정 해제' : '🔒 대진 확정'}</button>`;
+                
                 let grid = `<div class="court-grid">`;
                 fullSchedule[r].forEach((match, idx) => {
                     const c = idx + 1;
@@ -123,11 +124,11 @@
                         <div class="court-header" onclick="togglePlaying(${r},${c})"><div class="court-title">${c}경기</div><div class="status-text" id="status-${r}-${c}">${playingStatus[`${r}-${c}`] ? '⏳ 진행중' : '대기중'}</div></div>
                         <div class="match-body"><div class="match-row">
                             <div class="team-section" id="team-${r}-${c}-0" onclick="handleTeamClick(event, ${r}, ${c}, 0)">
-                                ${match.t0.map((p, pIdx) => `<div class="player-wrapper"><input type="text" class="player-input" value="${p}" oninput="searchPlayer(${r}, ${c}, 0, ${pIdx}, this)" onfocus="searchPlayer(${r}, ${c}, 0, ${pIdx}, this)" onblur="hideSuggestDelayed(${r}, ${c}, 0, ${pIdx})" onclick="event.stopPropagation();"><div class="search-suggest" id="suggest-${r}-${c}-0-${pIdx}"></div></div>`).join('')}
+                                ${match.t0.map((p, pIdx) => `<div class="player-wrapper"><input type="text" class="player-input" value="${p}" ${isLocked ? 'disabled' : ''} oninput="searchPlayer(${r}, ${c}, 0, ${pIdx}, this)" onfocus="searchPlayer(${r}, ${c}, 0, ${pIdx}, this)" onblur="hideSuggestDelayed(${r}, ${c}, 0, ${pIdx})" onclick="event.stopPropagation();"><div class="search-suggest" id="suggest-${r}-${c}-0-${pIdx}"></div></div>`).join('')}
                             </div>
                             <div class="vs-divider">VS</div>
                             <div class="team-section" id="team-${r}-${c}-1" onclick="handleTeamClick(event, ${r}, ${c}, 1)">
-                                ${match.t1.map((p, pIdx) => `<div class="player-wrapper"><input type="text" class="player-input" value="${p}" oninput="searchPlayer(${r}, ${c}, 1, ${pIdx}, this)" onfocus="searchPlayer(${r}, ${c}, 1, ${pIdx}, this)" onblur="hideSuggestDelayed(${r}, ${c}, 1, ${pIdx})" onclick="event.stopPropagation();"><div class="search-suggest" id="suggest-${r}-${c}-1-${pIdx}"></div></div>`).join('')}
+                                ${match.t1.map((p, pIdx) => `<div class="player-wrapper"><input type="text" class="player-input" value="${p}" ${isLocked ? 'disabled' : ''} oninput="searchPlayer(${r}, ${c}, 1, ${pIdx}, this)" onfocus="searchPlayer(${r}, ${c}, 1, ${pIdx}, this)" onblur="hideSuggestDelayed(${r}, ${c}, 1, ${pIdx})" onclick="event.stopPropagation();"><div class="search-suggest" id="suggest-${r}-${c}-1-${pIdx}"></div></div>`).join('')}
                             </div>
                         </div></div></div>`;
                 });
@@ -138,13 +139,13 @@
             renderRank();
         }
 
-        function handleTeamClick(e, r, c, teamIdx) {
+        function handleTeamClick(e, r, c, winIdx) {
             if(e.target.classList.contains('player-input') || e.target.classList.contains('suggest-item')) return;
-            if(!setConfirmed[r]) toggleLock(r);
-            setWinner(r, c, teamIdx);
+            setWinner(r, c, winIdx);
         }
 
         function searchPlayer(r, c, teamIdx, playerIdx, inputEl) {
+            if(setConfirmed[r]) return;
             const text = inputEl.value.trim().toLowerCase(), suggestBox = document.getElementById(`suggest-${r}-${c}-${teamIdx}-${playerIdx}`);
             if(!text) { suggestBox.innerHTML = ""; suggestBox.style.display = "none"; return; }
             const matched = playerList.filter(name => name.toLowerCase().includes(text) || getChosung(name).includes(getChosung(text)));
