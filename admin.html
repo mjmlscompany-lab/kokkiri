@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>👑 콕끼리 통제 총괄판 (5세트 / 세트당 6경기 증설판)</title>
+    <title>👑 콕끼리 통제 총괄판 (5세트 / 세트당 6경기)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { 
@@ -63,14 +63,14 @@
         .m-btn-confirm { background: var(--win); color: white; }
         
         .sync-status { background: #eef5fc; padding: 8px; border-radius: 10px; text-align: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; color: #2980b9; display: flex; justify-content: center; gap: 10px; align-items: center;}
-        .force-btn { background: #e74c3c; color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .force-btn { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="sync-status">
-    <span id="syncStatus">📡 서버 연결 확인 중...</span>
-    <button class="force-btn" onclick="handleClearAll()">⚠️ 데이터 완전 초기화</button>
+    <span id="syncStatus">📡 서버 상태 감지 중...</span>
+    <button class="force-btn" onclick="handleClearAll()">🚨 서버 강제 초기화</button>
 </div>
 <div class="round-tabs" id="roundTabs"></div>
 <div id="mainContainer"></div>
@@ -83,7 +83,6 @@
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 저장</button>
-        <button onclick="handleClearAll()" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#666; background:#eee; font-weight:bold; cursor:pointer;">🐘 시스템 완전 리셋</button>
     </div>
 </div>
 
@@ -140,7 +139,6 @@
         let res = ""; for (let i = 0; i < str.length; i++) { let code = str.charCodeAt(i) - 44032; if (code >= 0 && code <= 11172) { res += CHO_SEONG[Math.floor(code / 588)]; } else { res += str.charAt(i); } } return res;
     }
 
-    // [핵심] 로드할 때 서버 데이터를 먼저 안전하게 긁어오는 함수
     async function fetchDataFromServer() {
         const statusEl = document.getElementById('syncStatus');
         try {
@@ -152,26 +150,26 @@
                     players = data.players || players;
                     results = data.results || {};
                     playingStatus = data.playing || {};
-                    if(statusEl) statusEl.innerText = "✅ 서버 최신 데이터 로드 완료!";
+                    if(statusEl) statusEl.innerText = "✅ 서버 실시간 데이터 연동 완료!";
                 } else {
-                    if(statusEl) statusEl.innerText = "💡 서버에 데이터가 없거나 유효하지 않아 기본 스케줄로 시작합니다.";
+                    if(statusEl) statusEl.innerText = "💡 서버가 비어있거나 구버전 상태입니다. 초기화가 필요합니다.";
                 }
             }
         } catch (e) {
-            if(statusEl) statusEl.innerText = "📡 서버 연결 실패 (로컬 모드로 가동)";
+            if(statusEl) statusEl.innerText = "📡 오프라인 실행 중 (서버 미연결)";
         }
-        init(); // 다운로드가 끝나든 실패하든 무조건 화면 그리기 강제 집행!
+        init(); // 서버 데이터가 꼬여있거나 실패해도 화면은 무조건 강제 실행!
     }
 
     async function uploadToServer() {
         const statusEl = document.getElementById('syncStatus');
-        if(statusEl) statusEl.innerText = "⏳ 서버에 동기화 중...";
+        if(statusEl) statusEl.innerText = "⏳ 서버 전송 중...";
         const packageData = { schedule: fullSchedule, players: players, results: results, playing: playingStatus };
         try {
             await fetch(DB_URL, { method: 'POST', body: JSON.stringify(packageData) });
-            if(statusEl) statusEl.innerText = "✅ 서버 동기화 완료! 회원 화면 즉시 반영";
+            if(statusEl) statusEl.innerText = "✅ 서버 동기화 완료! 회원단 화면 반영";
         } catch (e) {
-            if(statusEl) statusEl.innerText = "⚠️ 서버 전송 실패 (오프라인 보존)";
+            if(statusEl) statusEl.innerText = "⚠️ 서버 통신 에러";
         }
     }
 
@@ -309,12 +307,12 @@
     }
 
     function handleClearAll() {
-        if(!confirm('서버와 로컬 데이터를 모두 밀어버리고 5세트 6경기 시스템으로 완전 초기화하시겠습니까?')) return;
+        if(!confirm('서버를 완전히 리셋하고 5세트 6경기 시스템을 적용하시겠습니까?')) return;
         fullSchedule = JSON.parse(JSON.stringify(defaultSchedule));
         players = playerList.map(name => ({name, wins: 0, losses: 0}));
         results = {}; playingStatus = {};
         init(); uploadToServer();
-        alert('모든 데이터가 깔끔하게 초기화되었습니다!');
+        alert('서버가 완전 초기화되었습니다! 이제 정상 이용이 가능합니다.');
     }
 
     function renderRank() {
@@ -335,7 +333,6 @@
     }
     function downloadExcel() { const wb = XLSX.utils.table_to_book(document.getElementById("rankTable"), {sheet:"전적"}); XLSX.writeFile(wb, `콕끼리_방장통제기록.xlsx`); }
     
-    // 페이지 켜지면 무조건 서버에 가서 긁어오기 작동
     window.onload = function() {
         fetchDataFromServer();
     };
