@@ -69,8 +69,8 @@
 <body>
 
 <div class="sync-status">
-    <span id="syncStatus">📡 서버 연동 대기 중...</span>
-    <button class="force-btn" onclick="handleClearAll()">⚠️ 데이터 전체 초기화</button>
+    <span id="syncStatus">📡 서버 연결 확인 중...</span>
+    <button class="force-btn" onclick="handleClearAll()">⚠️ 데이터 완전 초기화</button>
 </div>
 <div class="round-tabs" id="roundTabs"></div>
 <div id="mainContainer"></div>
@@ -83,7 +83,7 @@
             <tbody id="rankBody"></tbody>
         </table>
         <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 저장</button>
-        <button onclick="handleClearAll()" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#666; background:#eee; font-weight:bold; cursor:pointer;">🐘 로컬 시스템 강제 리셋</button>
+        <button onclick="handleClearAll()" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#666; background:#eee; font-weight:bold; cursor:pointer;">🐘 시스템 완전 리셋</button>
     </div>
 </div>
 
@@ -127,29 +127,11 @@
         ]
     };
 
-    let fullSchedule = defaultSchedule;
-    try {
-        const saved = localStorage.getItem('admin-schedule');
-        if(saved) {
-            const parsed = JSON.parse(saved);
-            if(parsed && parsed["1"] && Array.isArray(parsed["1"]) && parsed["1"].length === 6) { 
-                fullSchedule = parsed; 
-            }
-        }
-    } catch(e){}
-
+    let fullSchedule = JSON.parse(JSON.stringify(defaultSchedule));
     const playerList = ["구구", "단우", "로토", "구름", "이름", "백구", "새로", "바유", "슝슝이", "쿠쿠", "제리", "후니", "현이", "따순", "라임", "곽동칠", "리버", "우지", "동이", "극선호", "선호", "아몬드", "임시1", "임시2"];
     let players = playerList.map(name => ({name, wins: 0, losses: 0}));
-    try {
-        const savedPlayers = localStorage.getItem('admin-players');
-        if(savedPlayers) {
-            const parsedPlayers = JSON.parse(savedPlayers);
-            if(Array.isArray(parsedPlayers) && parsedPlayers.length > 0) players = parsedPlayers;
-        }
-    } catch(e){}
-
-    let results = {}; try { const savedRes = localStorage.getItem('admin-results'); if(savedRes) results = JSON.parse(savedRes); } catch(e){}
-    let playingStatus = {}; try { const savedPl = localStorage.getItem('admin-playing'); if(savedPl) playingStatus = JSON.parse(savedPl); } catch(e){}
+    let results = {};
+    let playingStatus = {};
     let activeModalCallback = null;
 
     const CHO_SEONG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
@@ -158,19 +140,38 @@
         let res = ""; for (let i = 0; i < str.length; i++) { let code = str.charCodeAt(i) - 44032; if (code >= 0 && code <= 11172) { res += CHO_SEONG[Math.floor(code / 588)]; } else { res += str.charAt(i); } } return res;
     }
 
+    // [핵심] 로드할 때 서버 데이터를 먼저 안전하게 긁어오는 함수
+    async function fetchDataFromServer() {
+        const statusEl = document.getElementById('syncStatus');
+        try {
+            const response = await fetch(DB_URL);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.schedule && data.schedule["1"] && data.schedule["1"].length === 6) {
+                    fullSchedule = data.schedule;
+                    players = data.players || players;
+                    results = data.results || {};
+                    playingStatus = data.playing || {};
+                    if(statusEl) statusEl.innerText = "✅ 서버 최신 데이터 로드 완료!";
+                } else {
+                    if(statusEl) statusEl.innerText = "💡 서버에 데이터가 없거나 유효하지 않아 기본 스케줄로 시작합니다.";
+                }
+            }
+        } catch (e) {
+            if(statusEl) statusEl.innerText = "📡 서버 연결 실패 (로컬 모드로 가동)";
+        }
+        init(); // 다운로드가 끝나든 실패하든 무조건 화면 그리기 강제 집행!
+    }
+
     async function uploadToServer() {
         const statusEl = document.getElementById('syncStatus');
-        if(window.location.protocol === 'file:') {
-            if(statusEl) statusEl.innerHTML = "⚠️ 로컬 실행 상태 (서버 연동을 위해선 <strong>깃허브에 업로드</strong>가 필요합니다)";
-            return;
-        }
-        if(statusEl) statusEl.innerText = "⏳ 실시간 전송 중...";
+        if(statusEl) statusEl.innerText = "⏳ 서버에 동기화 중...";
         const packageData = { schedule: fullSchedule, players: players, results: results, playing: playingStatus };
         try {
             await fetch(DB_URL, { method: 'POST', body: JSON.stringify(packageData) });
-            if(statusEl) statusEl.innerText = "✅ 서버 동기화 완료! 회원 화면에 즉시 반영됨";
+            if(statusEl) statusEl.innerText = "✅ 서버 동기화 완료! 회원 화면 즉시 반영";
         } catch (e) {
-            if(statusEl) statusEl.innerText = "⚠️ 오프라인 모드 작동 중";
+            if(statusEl) statusEl.innerText = "⚠️ 서버 전송 실패 (오프라인 보존)";
         }
     }
 
@@ -258,7 +259,6 @@
     function selectSuggestedPlayer(r, c, teamIdx, playerIdx, selectedName) {
         if(fullSchedule && fullSchedule[r] && fullSchedule[r][c-1]) {
             fullSchedule[r][c-1][`t${teamIdx}`][playerIdx] = selectedName;
-            localStorage.setItem('admin-schedule', JSON.stringify(fullSchedule));
             init(); uploadToServer();
         }
     }
@@ -269,14 +269,12 @@
     function togglePlaying(r, c) {
         const key = `${r}-${c}`;
         playingStatus[key] ? delete playingStatus[key] : playingStatus[key] = true;
-        localStorage.setItem('admin-playing', JSON.stringify(playingStatus));
         init(); uploadToServer();
     }
 
     function setWinner(r, c, winIdx) {
         if(results[`${r}-${c}`] === winIdx) {
             delete results[`${r}-${c}`];
-            localStorage.setItem('admin-results', JSON.stringify(results));
             init(); uploadToServer(); return;
         }
         if(fullSchedule && fullSchedule[r] && fullSchedule[r][c-1]) {
@@ -285,8 +283,7 @@
             document.getElementById('winModal').style.display = 'flex';
             activeModalCallback = function() {
                 results[`${r}-${c}`] = winIdx;
-                localStorage.setItem('admin-results', JSON.stringify(results));
-                if(playingStatus[`${r}-${c}`]) { delete playingStatus[`${r}-${c}`]; localStorage.setItem('admin-playing', JSON.stringify(playingStatus)); }
+                if(playingStatus[`${r}-${c}`]) { delete playingStatus[`${r}-${c}`]; }
                 init(); uploadToServer();
             };
         }
@@ -307,20 +304,17 @@
         });
 
         playingStatus = {}; results = {};
-        localStorage.removeItem('admin-playing'); localStorage.removeItem('admin-results');
-        localStorage.setItem('admin-players', JSON.stringify(players));
         alert("전적 합산 완료!"); 
         init(); uploadToServer();
     }
 
     function handleClearAll() {
-        if(!confirm('모든 데이터를 초기화하고 기본 대진표(5세트 6경기)로 변경할까요?')) return;
-        localStorage.clear();
-        fullSchedule = defaultSchedule;
+        if(!confirm('서버와 로컬 데이터를 모두 밀어버리고 5세트 6경기 시스템으로 완전 초기화하시겠습니까?')) return;
+        fullSchedule = JSON.parse(JSON.stringify(defaultSchedule));
         players = playerList.map(name => ({name, wins: 0, losses: 0}));
         results = {}; playingStatus = {};
         init(); uploadToServer();
-        alert('완전 초기화되었습니다!');
+        alert('모든 데이터가 깔끔하게 초기화되었습니다!');
     }
 
     function renderRank() {
@@ -341,9 +335,9 @@
     }
     function downloadExcel() { const wb = XLSX.utils.table_to_book(document.getElementById("rankTable"), {sheet:"전적"}); XLSX.writeFile(wb, `콕끼리_방장통제기록.xlsx`); }
     
+    // 페이지 켜지면 무조건 서버에 가서 긁어오기 작동
     window.onload = function() {
-        init();
-        setTimeout(uploadToServer, 300);
+        fetchDataFromServer();
     };
 </script>
 </body>
