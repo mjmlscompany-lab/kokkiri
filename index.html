@@ -157,7 +157,7 @@
 
         function handleTeamClick(e, r, c, winIdx) {
             if(e.target.classList.contains('player-input') || e.target.classList.contains('suggest-item')) return;
-            if(results[`${r}-${c}`] !== undefined) return; // 종료된 경기는 클릭 무시
+            if(results[`${r}-${c}`] !== undefined) return;
             setWinner(r, c, winIdx);
         }
 
@@ -184,8 +184,6 @@
 
         function togglePlaying(r, c) {
             const key = `${r}-${c}`, card = document.getElementById(`card-${r}-${c}`), textEl = document.getElementById(`status-${r}-${c}`);
-            
-            // 종료된 경기 복구 로직
             if (textEl.innerText === '✅ 종료') {
                 if(confirm("이미 종료된 경기입니다. 진행중 상태로 변환하시겠습니까?")) {
                     delete results[key]; localStorage.setItem('kok-saved-results', JSON.stringify(results));
@@ -196,7 +194,6 @@
                 }
                 return;
             }
-
             if (playingStatus[key]) {
                 if(!confirm("진행중인 경기를 대기중으로 돌리시겠습니까?")) return;
                 delete playingStatus[key]; card.classList.remove('playing'); textEl.innerText = '대기중';
@@ -210,14 +207,27 @@
 
         function setWinner(r, c, winIdx) {
             openWinModal(fullSchedule[r][c-1][`t${winIdx}`].join(', '), function() {
-                results[`${r}-${c}`] = winIdx; localStorage.setItem('kok-saved-results', JSON.stringify(results));
-                document.getElementById(`team-${r}-${c}-${winIdx}`).classList.add('winner');
+                results[`${r}-${c}`] = winIdx; 
+                localStorage.setItem('kok-saved-results', JSON.stringify(results));
                 
-                // 종료 시각화
+                const targetTeamEl = document.getElementById(`team-${r}-${c}-${winIdx}`);
+                const card = document.getElementById(`card-${r}-${c}`);
+                const statusEl = document.getElementById(`status-${r}-${c}`);
+
+                // 승리 팀 하이라이트 표시
+                targetTeamEl.classList.add('winner');
+                
+                // 0.5초 후 하이라이트 제거
+                setTimeout(() => { 
+                    targetTeamEl.classList.remove('winner'); 
+                }, 500);
+                
+                // 종료 상태로 시각화 (카드 상태 유지)
                 delete playingStatus[`${r}-${c}`];
-                document.getElementById(`card-${r}-${c}`).classList.remove('playing');
-                document.getElementById(`card-${r}-${c}`).classList.add('finished');
-                document.getElementById(`status-${r}-${c}`).innerText = '✅ 종료';
+                card.classList.remove('playing');
+                card.classList.add('finished');
+                statusEl.innerText = '✅ 종료';
+                
                 localStorage.setItem('kok-playing-status-nornd', JSON.stringify(playingStatus));
             });
         }
