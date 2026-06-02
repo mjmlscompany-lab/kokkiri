@@ -8,7 +8,7 @@
     <style>
         :root { 
             --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; 
-            --admin: #34495e; --excel: #27ae60; --win: #2ecc71;     
+            --admin: #34495e; --excel: #27ae60; --win: #2ecc71;       
             --same-seed: #2980b9; --mix-seed: #e91e63; --rnd-seed: #f1c40f; 
             --playing: #e67e22; 
         }
@@ -135,16 +135,23 @@
         }
 
         function toggleLock(r) {
+            // 상태 토글
             setConfirmed[r] = !setConfirmed[r];
             localStorage.setItem('kok-set-confirmed', JSON.stringify(setConfirmed));
             
             const btn = document.getElementById(`lock-btn-${r}`);
             const isLocked = setConfirmed[r];
+            
+            // 버튼 디자인 업데이트
             btn.className = `lock-btn ${isLocked ? 'locked' : 'unlocked'}`;
             btn.innerHTML = isLocked ? '🔓 대진 확정 해제' : '🔒 대진 확정';
             
-            const inputs = document.querySelectorAll(`#page-${r} .player-input`);
-            inputs.forEach(input => input.disabled = isLocked);
+            // 해당 라운드(page-r) 내 모든 input을 찾아 disabled 속성 강제 적용/해제
+            const page = document.getElementById(`page-${r}`);
+            const inputs = page.querySelectorAll('.player-input');
+            inputs.forEach(input => {
+                input.disabled = isLocked;
+            });
         }
 
         function init() { 
@@ -217,6 +224,7 @@
             renderRank();
         }
 
+        // ... (이하 나머지 함수들은 그대로 유지)
         function handleTeamClick(e, r, c, teamIdx) {
             if(!setConfirmed[r]) { alert("먼저 대진을 확정해주세요."); return; }
             if(e.target.classList.contains('player-input') || e.target.classList.contains('suggest-item')) return;
