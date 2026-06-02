@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 통합 기록판 (대진 확정 + 컬러 복구)</title>
+    <title>🐘 콕끼리 통합 기록판 (핑크 테마 적용)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { 
             --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; 
             --admin: #34495e; --excel: #27ae60; --win: #2ecc71;       
             --same-seed: #2980b9; --mix-seed: #e91e63; --rnd-seed: #f1c40f; 
-            --playing: #e67e22; 
+            --playing: #ff85a2; /* 진행중 컬러를 핑크로 변경 */
         }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 90px; }
         .round-tabs { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0 10px; position: sticky; top: 0; background: var(--bg); z-index: 100; }
@@ -25,7 +25,7 @@
         .court-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         @media (min-width: 768px) { .court-grid { grid-template-columns: 1fr 1fr; } }
         .court-card { background: white; border-radius: 18px; padding: 0 0 15px 0; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid #eee; transition: all 0.2s ease; }
-        .court-card.playing { border-color: var(--playing); box-shadow: 0 4px 15px rgba(230, 126, 34, 0.2); background: #fffdf9; }
+        .court-card.playing { border-color: var(--playing); box-shadow: 0 4px 15px rgba(255, 133, 162, 0.3); background: #fffdfd; }
         .court-header { background: #eef5fc; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s ease; user-select: none; }
         .court-title { font-size: 1rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 5px; }
         .status-text { font-size: 0.8rem; font-weight: bold; color: #777; background: white; padding: 3px 10px; border-radius: 12px; border: 1px solid #ddd; }
@@ -101,6 +101,10 @@
         function getChosung(str) { let res = ""; for (let i = 0; i < str.length; i++) { let code = str.charCodeAt(i) - 44032; if (code >= 0 && code <= 11172) { res += CHO_SEONG[Math.floor(code / 588)]; } else { res += str.charAt(i); } } return res; }
 
         function toggleLock(r) {
+            // 현재 확정 상태(true)라면 확인 메시지 띄우기
+            if(setConfirmed[r]) {
+                if(!confirm("대진 확정을 해제하시겠습니까?")) return;
+            }
             setConfirmed[r] = !setConfirmed[r];
             localStorage.setItem('kok-set-confirmed', JSON.stringify(setConfirmed));
             location.reload();
@@ -110,12 +114,10 @@
             playerList = players.map(p => p.name);
             const rTabs = document.getElementById('roundTabs'), main = document.getElementById('mainContainer');
             
-            // 세트 유형 지정 (same, same, mix, mix, rnd)
             const roundTypes = ['same', 'same', 'mix', 'mix', 'rnd'];
 
             for(let r=1; r<=5; r++) {
                 const btn = document.createElement('button');
-                // 기존 세트 컬러 클래스 복구 적용
                 btn.className = `r-btn ${roundTypes[r-1]} ${r===1?'active':''}`; 
                 btn.id = `rbtn${r}`; 
                 btn.innerText = (r===5) ? `5세트(R)` : `${r}세트`; 
