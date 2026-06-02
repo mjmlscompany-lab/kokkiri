@@ -196,8 +196,17 @@
             openWinModal(fullSchedule[r][c-1][`t${winIdx}`].join(', '), function() {
                 results[`${r}-${c}`] = winIdx; localStorage.setItem('kok-saved-results', JSON.stringify(results));
                 const targetTeamEl = document.getElementById(`team-${r}-${c}-${winIdx}`); targetTeamEl.classList.add('winner');
-                // 승리 확정 시 진행중 상태 강제 종료
-                if (playingStatus[`${r}-${c}`]) togglePlaying(r, c);
+                
+                // 승리 확정 시 자동 종료 로직
+                if (playingStatus[`${r}-${c}`]) {
+                    delete playingStatus[`${r}-${c}`];
+                    const card = document.getElementById(`card-${r}-${c}`);
+                    const textEl = document.getElementById(`status-${r}-${c}`);
+                    card.classList.remove('playing');
+                    textEl.innerText = '대기중';
+                    localStorage.setItem('kok-playing-status-nornd', JSON.stringify(playingStatus));
+                }
+                
                 setTimeout(() => { targetTeamEl.classList.remove('winner'); }, 500);
             });
         }
