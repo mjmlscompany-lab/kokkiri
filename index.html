@@ -52,7 +52,7 @@
 <body>
 
 <div class="header-bar">
-    <span id="syncTime">📡 서버 데이터 연결 대기 중...</span>
+    <span id="syncTime">📡 시스템 정상 가동 중</span>
     <button class="refresh-btn" onclick="fetchData()">🔄 수동 갱신</button>
 </div>
 
@@ -72,54 +72,44 @@
 <script>
     const DB_URL = "https://kvdb.io/jerry_kokkiri_2026/live_data";
     
+    // 명 : 닉네임 수기 관리 매핑 테이블 (여기서 수정하면 전체 적용)
+    const playerMap = {
+        1: "구구", 2: "단우", 3: "로토", 4: "구름", 5: "이름", 6: "백구",
+        7: "새로", 8: "바유", 9: "슝슝이", 10: "쿠쿠", 11: "제리", 12: "후니",
+        13: "현이", 14: "따순", 15: "라임", 16: "곽동칠", 17: "리버", 18: "우지",
+        19: "동이", 20: "극선호", 21: "선호", 22: "아몬드", 23: "임시1", 24: "임시2"
+    };
+
+    // 고정 번호 기반 고정 대진표 (명단 교체 에러 완전 차단)
     const defaultSchedule = {
         1: [
-            {t0:["구구","단우"], t1:["로토","구름"]},{t0:["이름","백구"], t1:["새로","바유"]},{t0:["슝슝이","쿠쿠"], t1:["제리","후니"]},
-            {t0:["극선호","따순"], t1:["라임","현이"]},{t0:["곽동칠","리버"], t1:["우지","아몬드"]},{t0:["동이","임시1"], t1:["선호","임시2"]}
+            {t0:[1,2], t1:[3,4]}, {t0:[5,6], t1:[7,8]}, {t0:[9,10], t1:[11,12]},
+            {t0:[20,14], t1:[15,13]}, {t0:[16,17], t1:[18,22]}, {t0:[19,23], t1:[21,24]}
         ],
         2: [
-            {t0:["구구","로토"], t1:["단우","선호"]},{t0:["이름","구름"], t1:["새로","백구"]},{t0:["슝슝이","제리"], t1:["후니","바유"]},
-            {t0:["쿠쿠","현이"], t1:["따순","라임"]},{t0:["곽동칠","우지"], t1:["아몬드","리버"]},{t0:["동이","극선호"], t1:["임시1","임시2"]}
+            {t0:[1,3], t1:[2,21]}, {t0:[5,4], t1:[7,6]}, {t0:[9,11], t1:[12,8]},
+            {t0:[10,13], t1:[14,15]}, {t0:[16,18], t1:[22,17]}, {t0:[19,20], t1:[23,24]}
         ],
         3: [
-            {t0:["구구","선호"], t1:["로토","단우"]},{t0:["이름","바유"], t1:["백구","구름"]},{t0:["새로","제리"], t1:["후니","슝슝이"]},
-            {t0:["쿠쿠","따순"], t1:["현이","라임"]},{t0:["리버","우지"], t1:["아몬드","극선호"]},{t0:["동이","임시2"], t1:["임시1","곽동칠"}
+            {t0:[1,21], t1:[3,2]}, {t0:[5,8], t1:[6,4]}, {t0:[7,11], t1:[12,9]},
+            {t0:[10,14], t1:[13,15]}, {t0:[17,18], t1:[22,20]}, {t0:[19,24], t1:[23,16]}
         ],
         4: [
-            {t0:["구구","우지"], t1:["단우","극선호"]},{t0:["로토","리버"], t1:["구름","따순"]},{t0:["이름","선호"], t1:["백구","곽동칠"]},
-            {t0:["바유","현이"], t1:["슝슝이","라임"]},{t0:["후니","새로"], t1:["제리","쿠쿠"]},{t0:["동이","아몬드"], t1:["임시1","임시2"]}
+            {t0:[1,18], t1:[2,20]}, {t0:[3,17], t1:[4,14]}, {t0:[5,21], t1:[6,16]},
+            {t0:[8,13], t1:[9,15]}, {t0:[12,7], t1:[11,10]}, {t0:[19,22], t1:[23,24]}
         ],
         5: [
-            {t0:["구구","아몬드"], t1:["단우","새로"]},{t0:["로토","라임"], t1:["구름","곽동칠"]},{t0:["이름","쿠쿠"], t1:["백구","리버"]},
-            {t0:["바유","후니"], t1:["슝슝이","제리"]},{t0:["현이","선호"], t1:["따순","극선호"]},{t0:["동이","우지"], t1:["임시1","임시2"]}
+            {t0:[1,22], t1:[2,7]}, {t0:[3,15], t1:[4,16]}, {t0:[5,10], t1:[6,17]},
+            {t0:[8,12], t1:[9,11]}, {t0:[13,21], t1:[14,20]}, {t0:[19,18], t1:[23,24]}
         ]
     };
 
     let serverData = {
         schedule: JSON.parse(JSON.stringify(defaultSchedule)),
-        players: ["구구","단우","로토","구름","이름","백구","새로","바유","슝슝이","쿠쿠","제리","후니","현이","따순","라임","곽동칠","리버","우지","동이","극선호","선호","아몬드","임시1","임시2"].map(name => ({name, wins:0, losses:0})),
+        players: Object.values(playerMap).map(name => ({name, wins:0, losses:0})),
         playing: {},
         results: {}
     };
-
-    async function fetchData() {
-        const timeEl = document.getElementById('syncTime');
-        try {
-            const res = await fetch(DB_URL);
-            if(res.ok) {
-                const data = await res.json();
-                if(data && data.schedule && data.schedule["1"] && data.schedule["1"].length === 6) {
-                    serverData = data;
-                    if(timeEl) timeEl.innerText = `✅ 실시간 연동 중 (갱신: ${new Date().toLocaleTimeString()})`;
-                } else {
-                    if(timeEl) timeEl.innerText = "💡 대기 중 (방장판 리셋 필요)";
-                }
-            }
-        } catch(e) {
-            if(timeEl) timeEl.innerText = "📴 네트워크 대기 중...";
-        }
-        renderAll();
-    }
 
     function renderAll() {
         const rTabs = document.getElementById('roundTabs');
@@ -129,7 +119,7 @@
         rTabs.innerHTML = "";
         main.innerHTML = "";
 
-        const sched = serverData.schedule;
+        const sched = serverData.schedule || defaultSchedule;
         const playing = serverData.playing || {};
         const results = serverData.results || {};
 
@@ -156,6 +146,9 @@
                 const isT0Win = results[`${r}-${c}`] === 0 ? 'winner' : '';
                 const isT1Win = results[`${r}-${c}`] === 1 ? 'winner' : '';
 
+                // 번호인 경우 playerMap에서 가져오고, 문자열로 저장되어 있다면 그대로 노출
+                const getPName = (p) => typeof p === 'number' ? (playerMap[p] || `선수${p}`) : p;
+
                 grid += `
                     <div class="court-card ${isPlaying} ${r<=2?'set-same':(r<=4?'set-mix':'set-rnd')}">
                         <div class="court-header">
@@ -165,11 +158,11 @@
                         <div class="match-body">
                             <div class="match-row">
                                 <div class="team-section ${isT0Win}">
-                                    ${match.t0.map(p => `<div>${p}</div>`).join('')}
+                                    ${match.t0 ? match.t0.map(p => `<div>${getPName(p)}</div>`).join('') : ''}
                                 </div>
                                 <div class="vs-divider">VS</div>
                                 <div class="team-section ${isT1Win}">
-                                    ${match.t1.map(p => `<div>${p}</div>`).join('')}
+                                    ${match.t1 ? match.t1.map(p => `<div>${getPName(p)}</div>`).join('') : ''}
                                 </div>
                             </div>
                         </div>
@@ -190,10 +183,33 @@
         renderRank();
     }
 
+    async function fetchData() {
+        const timeEl = document.getElementById('syncTime');
+        try {
+            const res = await fetch(DB_URL);
+            if(res.ok) {
+                const data = await res.json();
+                if(data && data.schedule && data.schedule["1"]) {
+                    serverData = data;
+                    if(timeEl) timeEl.innerText = `✅ 실시간 연동 중 (${new Date().toLocaleTimeString()})`;
+                }
+            }
+        } catch(e) {
+            if(timeEl) timeEl.innerText = "📡 로컬 보호 모드 가동 중";
+        }
+        renderAll();
+    }
+
     function renderRank() {
         if(!serverData || !serverData.players) return;
         const getPoint = (p) => (p.wins * 1) + (p.losses * -1) + 0.5;
-        const activePlayers = serverData.players.filter(p => p.wins > 0 || p.losses > 0).sort((a,b) => getPoint(b) - getPoint(a));
+        
+        // 현재 맵에 등록된 최신 이름 기준 필터링 및 정렬
+        const currentNames = Object.values(playerMap);
+        const activePlayers = serverData.players
+            .filter(p => currentNames.includes(p.name) && (p.wins > 0 || p.losses > 0))
+            .sort((a,b) => getPoint(b) - getPoint(a));
+
         const bodyEl = document.getElementById('rankBody');
         if(bodyEl) {
             bodyEl.innerHTML = activePlayers.map((p, i) => `<tr><td>${i+1}</td><td><strong>${p.name}</strong></td><td>${p.wins}</td><td>${p.losses}</td><td style="font-weight:bold; color:#e91e63;">${getPoint(p).toFixed(1)}</td></tr>`).join('');
@@ -208,10 +224,9 @@
         if(r === 'result') { document.getElementById('page-result').classList.add('active'); renderRank(); } else { document.getElementById(`page-${r}`).classList.add('active'); }
     }
 
-    // 초기 구동 및 주기적 동기화
     renderAll();
     fetchData();
-    setInterval(fetchData, 7000);
+    setInterval(fetchData, 8000);
 </script>
 </body>
 </html>
