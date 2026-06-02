@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 통합 기록판 (대진 확정 버전)</title>
+    <title>🐘 콕끼리 통합 기록판 (대진 확정 + 컬러 복구)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { 
@@ -109,10 +109,22 @@
         function init() { 
             playerList = players.map(p => p.name);
             const rTabs = document.getElementById('roundTabs'), main = document.getElementById('mainContainer');
+            
+            // 세트 유형 지정 (same, same, mix, mix, rnd)
+            const roundTypes = ['same', 'same', 'mix', 'mix', 'rnd'];
+
             for(let r=1; r<=5; r++) {
                 const btn = document.createElement('button');
-                btn.className = `r-btn ${r===1?'active':''}`; btn.id = `rbtn${r}`; btn.innerText = (r===5) ? `5세트(R)` : `${r}세트`; btn.onclick = () => showRound(r); rTabs.appendChild(btn);
-                const rPage = document.createElement('div'); rPage.className = `page-content ${r===1?'active':''}`; rPage.id = `page-${r}`;
+                // 기존 세트 컬러 클래스 복구 적용
+                btn.className = `r-btn ${roundTypes[r-1]} ${r===1?'active':''}`; 
+                btn.id = `rbtn${r}`; 
+                btn.innerText = (r===5) ? `5세트(R)` : `${r}세트`; 
+                btn.onclick = () => showRound(r); 
+                rTabs.appendChild(btn);
+
+                const rPage = document.createElement('div'); 
+                rPage.className = `page-content ${r===1?'active':''}`; 
+                rPage.id = `page-${r}`;
                 
                 const isLocked = !!setConfirmed[r];
                 rPage.innerHTML = `<button id="lock-btn-${r}" class="lock-btn ${isLocked ? 'locked' : 'unlocked'}" onclick="toggleLock(${r})">${isLocked ? '🔓 대진 확정 해제' : '🔒 대진 확정'}</button>`;
