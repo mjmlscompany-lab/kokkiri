@@ -62,6 +62,7 @@
         .m-btn { flex: 1; padding: 14px; border-radius: 14px; border: none; font-size: 1rem; font-weight: bold; cursor: pointer; }
         .m-btn-cancel { background: #eee; color: #666; }
         .m-btn-confirm { background: var(--win); color: white; }
+        .mvp-badge { background: #fff9c4; padding: 5px 10px; border-radius: 10px; margin: 5px; display: inline-block; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -71,7 +72,7 @@
         <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
             <h2 style="color:var(--result); margin-top:0; text-align: center;">🏆 콕끼리 명예의 전당 🐘</h2>
             <div class="mvp-container">
-                <div class="mvp-title">👑 오늘의 MVP (5승 달성자 OR 전승자)</div>
+                <div class="mvp-title">👑 오늘의 MVP (4승 이상 OR 무패)</div>
                 <div class="mvp-badge-wrapper" id="mvpContainer"></div>
             </div>
         </div>
@@ -108,7 +109,6 @@
         let setConfirmed = JSON.parse(localStorage.getItem('kok-set-confirmed')) || {};
         let playerList = [], players = JSON.parse(localStorage.getItem('kok-final-no-rnd')) || [], results = JSON.parse(localStorage.getItem('kok-saved-results')) || {}, playingStatus = JSON.parse(localStorage.getItem('kok-playing-status-nornd')) || {}, activeModalCallback = null;
 
-        // 데이터 백업 및 복원 함수 추가
         function backupData() {
             const data = { schedule: fullSchedule, confirmed: setConfirmed, players: players, results: results, playing: playingStatus };
             const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
@@ -263,18 +263,27 @@
             const keys = Object.keys(results); if(keys.length === 0) return alert("기록할 승리팀을 선택해주세요.");
             if(!confirm("선택한 모든 결과를 최종 전적에 합산할까요?")) return;
             keys.forEach(key => {
-                const [r, c] = key.split('-'); const winIdx = results[key], lossIdx = winIdx === 0 ? 1 : 0;
+                const [r, c] = key.split('-'); 
+                if (r === '5') return; 
+
+                const winIdx = results[key], lossIdx = winIdx === 0 ? 1 : 0;
                 fullSchedule[r][c-1][`t${winIdx}`].forEach(n => { const p = players.find(x => x.name === n); if(p) p.wins++; });
                 fullSchedule[r][c-1][`t${lossIdx}`].forEach(n => { const p = players.find(x => x.name === n); if(p) p.losses++; });
             });
             playingStatus = {}; results = {}; localStorage.removeItem('kok-playing-status-nornd'); localStorage.removeItem('kok-saved-results'); localStorage.setItem('kok-final-no-rnd', JSON.stringify(players));
-            alert("최종 합산 완료!"); location.reload();
+            alert("최종 합산 완료! (5세트 기록은 MVP 산정에서 제외되었습니다)"); location.reload();
         }
 
         function renderRank() {
-            const activePlayers = players.filter(p => p.wins > 0 || p.losses > 0), mvpPlayers = activePlayers.filter(p => p.wins >= 5 || (p.wins > 0 && p.losses === 0));
+            const activePlayers = players.filter(p => p.wins > 0 || p.losses > 0);
+            // 수정된 MVP 기준: 4승 이상 OR 무패(1승 이상)
+            const mvpPlayers = activePlayers.filter(p => p.wins >= 4 || (p.wins > 0 && p.losses === 0));
+            
             const mvpContainer = document.getElementById('mvpContainer');
-            mvpContainer.innerHTML = mvpPlayers.length > 0 ? mvpPlayers.map(p => `<div class="mvp-badge">🏅 ${p.name} (${p.wins}승)</div>`).join('') : `<span style="font-size:0.85rem; color:#999; font-weight:bold;">MVP 조건 충족자가 없습니다.</span>`;
+            mvpContainer.innerHTML = mvpPlayers.length > 0 ? 
+                mvpPlayers.map(p => `<div class="mvp-badge">🏅 ${p.name} (${p.wins}승)</div>`).join('') : 
+                `<span style="font-size:0.85rem; color:#999; font-weight:bold;">MVP 조건 충족자가 없습니다.</span>`;
+            
             const sorted = [...activePlayers].sort((a, b) => b.wins - a.wins);
             document.getElementById('rankBody').innerHTML = sorted.map((p) => `<tr><td><strong>${p.name}</strong></td><td>${p.wins}</td><td>${p.losses}</td></tr>`).join('');
         }
