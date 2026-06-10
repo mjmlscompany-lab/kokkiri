@@ -2,294 +2,87 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐘 콕끼리 통합 기록판</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐘 콕끼리 자동 순환판 (중복 원천 차단)</title>
     <style>
-        :root { 
-            --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; 
-            --admin: #34495e; --excel: #27ae60; --win: #2ecc71;       
-            --same-seed: #2980b9; --mix-seed: #e91e63; --rnd-seed: #f1c40f; 
-            --playing: #ff85a2; --finished: #95a5a6;
-        }
-        body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--dark); padding-bottom: 90px; }
-        .round-tabs { display: flex; gap: 5px; overflow-x: auto; padding: 5px 0 10px; position: sticky; top: 0; background: var(--bg); z-index: 100; }
-        .r-btn { padding: 12px 15px; border-radius: 12px; border: 1px solid #ddd; background: white; white-space: nowrap; font-weight: bold; flex: 1; min-width: 70px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; }
-        .r-btn.same.active { background: var(--same-seed); color: white; border-color: var(--same-seed); }
-        .r-btn.mix.active { background: var(--mix-seed); color: white; border-color: var(--mix-seed); }
-        .r-btn.rnd.active { background: var(--rnd-seed); color: var(--dark); border-color: var(--rnd-seed); }
-        .r-btn.res-tab.active { background: var(--result); border-color: var(--result); color: white; }
-        .r-btn.admin-tab.active { background: var(--admin); border-color: var(--admin); color: white; }
-        .page-content { display: none; }
-        .page-content.active { display: block; }
-        .court-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        @media (min-width: 768px) { .court-grid { grid-template-columns: 1fr 1fr; } }
-        .court-card { background: white; border-radius: 18px; padding: 0 0 15px 0; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid #eee; transition: all 0.2s ease; }
-        .court-card.playing { border-color: var(--playing); box-shadow: 0 4px 15px rgba(255, 133, 162, 0.3); background: #fffdfd; }
-        .court-card.finished { border-color: var(--finished); opacity: 0.9; }
-        .court-header { background: #eef5fc; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s ease; user-select: none; }
-        .court-title { font-size: 1rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 5px; }
-        .status-text { font-size: 0.8rem; font-weight: bold; color: #777; background: white; padding: 3px 10px; border-radius: 12px; border: 1px solid #ddd; }
-        .court-card.playing .status-text { background: var(--playing); color: white; border-color: var(--playing); }
-        .court-card.finished .status-text { background: var(--finished); color: white; border-color: var(--finished); }
-        
-        .match-body { padding: 15px 15px 0 15px; }
-        .match-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .team-section { flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 20px 8px; border-radius: 15px; background: #fff; border: 2px solid #eee; transition: all 0.15s ease; position: relative; min-height: 80px; justify-content: center; text-align: center; cursor: pointer; }
-        .team-section.winner { background-color: #ebf9eb !important; border-color: var(--win) !important; }
-        .player-wrapper { position: relative; width: calc(100% - 16px); margin: 0 auto; }
-        .player-input { background: white; padding: 6px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.95rem; border: 1px solid #eee; font-family: inherit; width: 100%; box-sizing: border-box; color: var(--dark); transition: all 0.15s ease; }
-        .player-input:disabled { background: #f9f9f9; color: #999; cursor: not-allowed; }
-        .search-suggest { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #3498db; border-radius: 8px; max-height: 150px; overflow-y: auto; z-index: 999; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin-top: 2px; }
-        .suggest-item { padding: 8px 10px; font-size: 0.85rem; text-align: center; cursor: pointer; border-bottom: 1px solid #eee; font-weight: bold; color: var(--dark); }
-        .vs-divider { font-weight: 900; color: #ddd; font-size: 1.2rem; user-select: none; }
-        .apply-all { width: calc(100% - 20px); max-width: 500px; padding: 20px; background: var(--dark); color: white; border: none; border-radius: 15px; font-size: 1.2rem; font-weight: bold; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 200; box-shadow: 0 5px 20px rgba(0,0,0,0.3); cursor: pointer; }
-        .rank-table { width: 100%; border-collapse: collapse; font-size: 1.05rem; background: white; border-radius: 15px; overflow: hidden; }
-        .rank-table th { padding: 15px; border-bottom: 2px solid #eee; background: #fafafa; }
-        .rank-table td { padding: 15px; text-align: center; border-bottom: 1px solid #f2f2f2; }
-        .excel-btn { background: var(--excel); color: white; border: none; border-radius: 12px; padding: 15px; width: 100%; font-weight: bold; font-size: 1rem; margin-top: 15px; cursor: pointer; }
-        .data-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .data-btn { padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; color: white; }
-        .lock-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 1rem; }
-        .lock-btn.locked { background: #27ae60; color: white; }
-        .lock-btn.unlocked { background: #e74c3c; color: white; }
-        .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); z-index: 9999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-        .modal-content { background: white; border-radius: 24px; padding: 25px 20px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .modal-icon { font-size: 2.2rem; margin-bottom: 8px; }
-        .modal-title { font-size: 1.15rem; font-weight: 800; color: var(--dark); margin: 0 0 12px 0; line-height: 1.4; }
-        .modal-team-names { color: #27ae60; background: #ebf9eb; padding: 10px 15px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; display: inline-block; margin-bottom: 20px; word-break: break-all; }
-        .modal-buttons { display: flex; gap: 10px; }
-        .m-btn { flex: 1; padding: 14px; border-radius: 14px; border: none; font-size: 1rem; font-weight: bold; cursor: pointer; }
-        .m-btn-cancel { background: #eee; color: #666; }
-        .m-btn-confirm { background: var(--win); color: white; }
+        body { font-family: 'Pretendard', sans-serif; background: #f4f7f9; padding: 20px; color: #2c3e50; }
+        .court-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 1000px; margin: 0 auto; }
+        .court { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 2px solid transparent; transition: 0.3s; }
+        .court.playing { border-color: #ff85a2; background: #fffdfd; }
+        .title-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .title { font-weight: 800; font-size: 1.1rem; color: #27ae60; }
+        .playing .title { color: #ff85a2; }
+        .status-text { font-size: 0.8rem; font-weight: bold; color: #ff85a2; display: none; }
+        .playing .status-text { display: block; }
+        .player-input { width: 100%; padding: 10px; margin-bottom: 5px; border: 1px solid #eee; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+        .btn-box { display: flex; gap: 5px; margin-top: 10px; }
+        button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .start-btn { background: #27ae60; color: white; }
+        .end-btn { background: #ff85a2; color: white; }
     </style>
 </head>
 <body>
-    <div class="round-tabs" id="roundTabs"></div>
-    <div id="mainContainer"></div>
-    <div id="page-result" class="page-content">
-        <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h2 style="color:var(--result); margin-top:0; text-align: center;">🏆 콕끼리 명예의 전당 🐘</h2>
-            <div class="mvp-container">
-                <div class="mvp-title">👑 오늘의 MVP (5승 달성자 OR 전승자)</div>
-                <div class="mvp-badge-wrapper" id="mvpContainer"></div>
-            </div>
-        </div>
-    </div>
-    <div id="page-admin" class="page-content">
-        <div style="background: white; padding: 20px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <h2 style="color:var(--admin); margin-top:0; text-align: center;">⚙️ 설정 및 통합 순위표</h2>
-            <table class="rank-table" id="rankTable"><thead><tr><th>이름</th><th>승</th><th>패</th></tr></thead><tbody id="rankBody"></tbody></table>
-            <button class="excel-btn" onclick="downloadExcel()">📊 엑셀 저장</button>
-            <div class="data-btns">
-                <button class="data-btn" style="background:#3498db" onclick="backupData()">💾 데이터 백업</button>
-                <button class="data-btn" style="background:#e67e22" onclick="document.getElementById('fileInput').click()">📂 데이터 불러오기</button>
-                <input type="file" id="fileInput" style="display:none" onchange="restoreData(event)">
-            </div>
-            <button onclick="if(confirm('모든 기록과 바뀐 대진 이름을 초기화할까요?')) {localStorage.clear(); location.reload();}" style="margin-top:25px; width:100%; padding:15px; border:none; border-radius:12px; color:#999; background:#eee; font-weight:bold; cursor:pointer;">🐘 데이터 전체 초기화</button>
-        </div>
-    </div>
-    <button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
-    <div class="modal-overlay" id="winModal">
-        <div class="modal-content">
-            <div class="modal-icon">🌿</div>
-            <div class="modal-title">아래 팀이 경기에서<br>승리하셨습니까?</div>
-            <div class="modal-team-names" id="modalTeamNames"></div>
-            <div class="modal-buttons">
-                <button class="m-btn m-btn-cancel" onclick="closeWinModal()">취소</button>
-                <button class="m-btn m-btn-confirm" id="modalConfirmBtn">승리 확정</button>
-            </div>
-        </div>
-    </div>
+    <h2 style="text-align:center;">🐘 콕끼리 자동 순환판</h2>
+    <div id="courts-container" class="court-grid"></div>
 
     <script>
-        const defaultSchedule = { 1: Array(6).fill(null).map(() => ({t0:["",""], t1:["",""]})), 2: Array(6).fill(null).map(() => ({t0:["",""], t1:["",""]})), 3: Array(6).fill(null).map(() => ({t0:["",""], t1:["",""]})), 4: Array(6).fill(null).map(() => ({t0:["",""], t1:["",""]})), 5: Array(6).fill(null).map(() => ({t0:["",""], t1:["",""]})) };
-        let fullSchedule = JSON.parse(localStorage.getItem('kok-custom-schedule')) || defaultSchedule;
-        let setConfirmed = JSON.parse(localStorage.getItem('kok-set-confirmed')) || {};
-        let playerList = [], players = JSON.parse(localStorage.getItem('kok-final-no-rnd')) || [], results = JSON.parse(localStorage.getItem('kok-saved-results')) || {}, playingStatus = JSON.parse(localStorage.getItem('kok-playing-status-nornd')) || {}, activeModalCallback = null;
+        const container = document.getElementById('courts-container');
 
-        // 데이터 백업 및 복원 함수 추가
-        function backupData() {
-            const data = { schedule: fullSchedule, confirmed: setConfirmed, players: players, results: results, playing: playingStatus };
-            const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `콕끼리_데이터_${new Date().toISOString().slice(0,10)}.json`; a.click();
-        }
+        // 중복 방지: 이름 입력창에서 벗어날 때 체크
+        function validateName(inputEl) {
+            const val = inputEl.value.trim();
+            if (!val) return;
 
-        function restoreData(event) {
-            const file = event.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    localStorage.setItem('kok-custom-schedule', JSON.stringify(data.schedule));
-                    localStorage.setItem('kok-set-confirmed', JSON.stringify(data.confirmed));
-                    localStorage.setItem('kok-final-no-rnd', JSON.stringify(data.players));
-                    localStorage.setItem('kok-saved-results', JSON.stringify(data.results));
-                    localStorage.setItem('kok-playing-status-nornd', JSON.stringify(data.playing));
-                    location.reload();
-                } catch(err) { alert("잘못된 파일 형식입니다."); }
-            };
-            reader.readAsText(file);
-        }
-
-        const CHO_SEONG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
-        function getChosung(str) { let res = ""; for (let i = 0; i < str.length; i++) { let code = str.charCodeAt(i) - 44032; if (code >= 0 && code <= 11172) { res += CHO_SEONG[Math.floor(code / 588)]; } else { res += str.charAt(i); } } return res; }
-
-        function toggleLock(r) {
-            if(setConfirmed[r]) { if(!confirm("대진 확정을 해제하시겠습니까?")) return; }
-            setConfirmed[r] = !setConfirmed[r];
-            localStorage.setItem('kok-set-confirmed', JSON.stringify(setConfirmed));
-            location.reload();
-        }
-
-        function init() { 
-            playerList = players.map(p => p.name);
-            const rTabs = document.getElementById('roundTabs'), main = document.getElementById('mainContainer');
-            const roundTypes = ['same', 'same', 'mix', 'mix', 'rnd'];
-
-            for(let r=1; r<=5; r++) {
-                const btn = document.createElement('button');
-                btn.className = `r-btn ${roundTypes[r-1]} ${r===1?'active':''}`; 
-                btn.id = `rbtn${r}`; 
-                btn.innerText = (r===5) ? `5세트(R)` : `${r}세트`; 
-                btn.onclick = () => showRound(r); 
-                rTabs.appendChild(btn);
-
-                const rPage = document.createElement('div'); 
-                rPage.className = `page-content ${r===1?'active':''}`; 
-                rPage.id = `page-${r}`;
-                
-                const isLocked = !!setConfirmed[r];
-                rPage.innerHTML = `<button id="lock-btn-${r}" class="lock-btn ${isLocked ? 'locked' : 'unlocked'}" onclick="toggleLock(${r})">${isLocked ? '🔓 대진 확정 해제' : '🔒 대진 확정'}</button>`;
-                
-                let grid = `<div class="court-grid">`;
-                fullSchedule[r].forEach((match, idx) => {
-                    const c = idx + 1;
-                    const isPlaying = playingStatus[`${r}-${c}`];
-                    const isFinished = results[`${r}-${c}`] !== undefined;
-                    grid += `<div class="court-card ${isPlaying ? 'playing' : ''} ${isFinished ? 'finished' : ''}" id="card-${r}-${c}">
-                        <div class="court-header" onclick="togglePlaying(${r},${c})"><div class="court-title">${c}경기</div><div class="status-text" id="status-${r}-${c}">${isFinished ? '✅ 종료' : (isPlaying ? '⏳ 진행중' : '대기중')}</div></div>
-                        <div class="match-body"><div class="match-row">
-                            <div class="team-section ${results[`${r}-${c}`] === 0 ? 'winner' : ''}" id="team-${r}-${c}-0" onclick="handleTeamClick(event, ${r}, ${c}, 0)">
-                                ${match.t0.map((p, pIdx) => `<div class="player-wrapper"><input type="text" class="player-input" value="${p}" ${isLocked ? 'disabled' : ''} oninput="searchPlayer(${r}, ${c}, 0, ${pIdx}, this)" onfocus="searchPlayer(${r}, ${c}, 0, ${pIdx}, this)" onblur="hideSuggestDelayed(${r}, ${c}, 0, ${pIdx})" onclick="event.stopPropagation();"><div class="search-suggest" id="suggest-${r}-${c}-0-${pIdx}"></div></div>`).join('')}
-                            </div>
-                            <div class="vs-divider">VS</div>
-                            <div class="team-section ${results[`${r}-${c}`] === 1 ? 'winner' : ''}" id="team-${r}-${c}-1" onclick="handleTeamClick(event, ${r}, ${c}, 1)">
-                                ${match.t1.map((p, pIdx) => `<div class="player-wrapper"><input type="text" class="player-input" value="${p}" ${isLocked ? 'disabled' : ''} oninput="searchPlayer(${r}, ${c}, 1, ${pIdx}, this)" onfocus="searchPlayer(${r}, ${c}, 1, ${pIdx}, this)" onblur="hideSuggestDelayed(${r}, ${c}, 1, ${pIdx})" onclick="event.stopPropagation();"><div class="search-suggest" id="suggest-${r}-${c}-1-${pIdx}"></div></div>`).join('')}
-                            </div>
-                        </div></div></div>`;
-                });
-                rPage.innerHTML += grid + `</div>`; main.appendChild(rPage);
-            }
-            const resBtn = document.createElement('button'); resBtn.className = 'r-btn res-tab'; resBtn.id = 'rbtn-result'; resBtn.innerText = '📊 결과'; resBtn.onclick = () => showRound('result'); rTabs.appendChild(resBtn);
-            const adminBtn = document.createElement('button'); adminBtn.className = 'r-btn admin-tab'; adminBtn.id = 'rbtn-admin'; adminBtn.innerHTML = '⚙️ 설정'; adminBtn.onclick = () => showRound('admin'); rTabs.appendChild(adminBtn);
-            renderRank();
-        }
-
-        function handleTeamClick(e, r, c, winIdx) {
-            if(e.target.classList.contains('player-input') || e.target.classList.contains('suggest-item')) return;
-            if(results[`${r}-${c}`] !== undefined) return;
-            setWinner(r, c, winIdx);
-        }
-
-        function searchPlayer(r, c, teamIdx, playerIdx, inputEl) {
-            if(setConfirmed[r]) return;
-            const text = inputEl.value.trim().toLowerCase(), suggestBox = document.getElementById(`suggest-${r}-${c}-${teamIdx}-${playerIdx}`);
-            if(!text) { suggestBox.innerHTML = ""; suggestBox.style.display = "none"; return; }
-            const matched = playerList.filter(name => name.toLowerCase().includes(text) || getChosung(name).includes(getChosung(text)));
-            if(matched.length > 0) { suggestBox.innerHTML = matched.map(name => `<div class="suggest-item" onmousedown="selectSuggestedPlayer(${r}, ${c}, ${teamIdx}, ${playerIdx}, '${name}')">${name}</div>`).join(''); suggestBox.style.display = "block"; } else { suggestBox.innerHTML = ""; suggestBox.style.display = "none"; }
-            updatePlayerNameMemory(r, c, teamIdx, playerIdx, text);
-        }
-
-        function selectSuggestedPlayer(r, c, teamIdx, playerIdx, selectedName) {
-            const input = document.getElementById(`card-${r}-${c}`).querySelectorAll('.team-section')[teamIdx].querySelectorAll('.player-input')[playerIdx];
-            input.value = selectedName; document.getElementById(`suggest-${r}-${c}-${teamIdx}-${playerIdx}`).style.display = "none"; updatePlayerNameMemory(r, c, teamIdx, playerIdx, selectedName);
-        }
-
-        function hideSuggestDelayed(r, c, teamIdx, playerIdx) { setTimeout(() => { const el = document.getElementById(`suggest-${r}-${c}-${teamIdx}-${playerIdx}`); if(el) el.style.display = "none"; }, 200); }
-
-        function updatePlayerNameMemory(r, c, teamIdx, playerIdx, val) {
-            if(!val) return; fullSchedule[r][c-1][`t${teamIdx}`][playerIdx] = val; localStorage.setItem('kok-custom-schedule', JSON.stringify(fullSchedule));
-            if (!players.find(x => x.name === val)) { players.push({name: val, wins: 0, losses: 0}); localStorage.setItem('kok-final-no-rnd', JSON.stringify(players)); playerList = players.map(p => p.name); }
-        }
-
-        function togglePlaying(r, c) {
-            const key = `${r}-${c}`, card = document.getElementById(`card-${r}-${c}`), textEl = document.getElementById(`status-${r}-${c}`);
-            if (textEl.innerText === '✅ 종료') {
-                if(confirm("이미 종료된 경기입니다. 진행중 상태로 변환하시겠습니까?")) {
-                    delete results[key]; localStorage.setItem('kok-saved-results', JSON.stringify(results));
-                    document.getElementById(`team-${r}-${c}-0`).classList.remove('winner');
-                    document.getElementById(`team-${r}-${c}-1`).classList.remove('winner');
-                    card.classList.remove('finished');
-                    playingStatus[key] = true; card.classList.add('playing'); textEl.innerText = '⏳ 진행중';
-                }
-                return;
-            }
-            if (playingStatus[key]) {
-                if(!confirm("진행중인 경기를 대기중으로 돌리시겠습니까?")) return;
-                delete playingStatus[key]; card.classList.remove('playing'); textEl.innerText = '대기중';
-            } else { playingStatus[key] = true; card.classList.add('playing'); textEl.innerText = '⏳ 진행중'; }
-            localStorage.setItem('kok-playing-status-nornd', JSON.stringify(playingStatus));
-        }
-
-        function openWinModal(names, onConfirm) { document.getElementById('modalTeamNames').innerText = names; document.getElementById('winModal').style.display = 'flex'; document.getElementById('winModal').classList.add('active'); activeModalCallback = onConfirm; }
-        function closeWinModal() { document.getElementById('winModal').classList.remove('active'); document.getElementById('winModal').style.display = 'none'; activeModalCallback = null; }
-        document.getElementById('modalConfirmBtn').onclick = function() { if(activeModalCallback) activeModalCallback(); closeWinModal(); };
-
-        function setWinner(r, c, winIdx) {
-            openWinModal(fullSchedule[r][c-1][`t${winIdx}`].join(', '), function() {
-                results[`${r}-${c}`] = winIdx; 
-                localStorage.setItem('kok-saved-results', JSON.stringify(results));
-                
-                const targetTeamEl = document.getElementById(`team-${r}-${c}-${winIdx}`);
-                const card = document.getElementById(`card-${r}-${c}`);
-                const statusEl = document.getElementById(`status-${r}-${c}`);
-
-                targetTeamEl.classList.add('winner');
-                setTimeout(() => { targetTeamEl.classList.remove('winner'); }, 500);
-                
-                delete playingStatus[`${r}-${c}`];
-                card.classList.remove('playing');
-                card.classList.add('finished');
-                statusEl.innerText = '✅ 종료';
-                
-                localStorage.setItem('kok-playing-status-nornd', JSON.stringify(playingStatus));
+            const allInputs = document.querySelectorAll('.player-input');
+            let count = 0;
+            allInputs.forEach(input => {
+                if (input.value.trim() === val) count++;
             });
+
+            if (count > 1) {
+                alert(`"${val}"님은 이미 다른 코트에 등록되어 있습니다.`);
+                inputEl.value = ''; // 중복이면 지움
+                inputEl.focus();
+            }
         }
 
-        function confirmAndSave() {
-            const keys = Object.keys(results); if(keys.length === 0) return alert("기록할 승리팀을 선택해주세요.");
-            if(!confirm("선택한 모든 결과를 최종 전적에 합산할까요?")) return;
-            keys.forEach(key => {
-                const [r, c] = key.split('-'); const winIdx = results[key], lossIdx = winIdx === 0 ? 1 : 0;
-                fullSchedule[r][c-1][`t${winIdx}`].forEach(n => { const p = players.find(x => x.name === n); if(p) p.wins++; });
-                fullSchedule[r][c-1][`t${lossIdx}`].forEach(n => { const p = players.find(x => x.name === n); if(p) p.losses++; });
-            });
-            playingStatus = {}; results = {}; localStorage.removeItem('kok-playing-status-nornd'); localStorage.removeItem('kok-saved-results'); localStorage.setItem('kok-final-no-rnd', JSON.stringify(players));
-            alert("최종 합산 완료!"); location.reload();
+        for(let i=1; i<=6; i++) {
+            const div = document.createElement('div');
+            div.className = 'court';
+            div.id = `court-${i}`;
+            div.innerHTML = `
+                <div class="title-wrapper">
+                    <div class="title">${i}번 코트</div>
+                    <div class="status-text">▶ 게임 중</div>
+                </div>
+                ${[1,2,3,4].map(n => `<input type="text" class="player-input" onblur="validateName(this)" placeholder="이름 ${n}">`).join('')}
+                <div class="btn-box">
+                    <button class="start-btn" onclick="startGame(${i})">시작</button>
+                    <button class="end-btn" onclick="endGame(${i})">종료</button>
+                </div>
+            `;
+            container.appendChild(div);
         }
 
-        function renderRank() {
-            const activePlayers = players.filter(p => p.wins > 0 || p.losses > 0), mvpPlayers = activePlayers.filter(p => p.wins >= 5 || (p.wins > 0 && p.losses === 0));
-            const mvpContainer = document.getElementById('mvpContainer');
-            mvpContainer.innerHTML = mvpPlayers.length > 0 ? mvpPlayers.map(p => `<div class="mvp-badge">🏅 ${p.name} (${p.wins}승)</div>`).join('') : `<span style="font-size:0.85rem; color:#999; font-weight:bold;">MVP 조건 충족자가 없습니다.</span>`;
-            const sorted = [...activePlayers].sort((a, b) => b.wins - a.wins);
-            document.getElementById('rankBody').innerHTML = sorted.map((p) => `<tr><td><strong>${p.name}</strong></td><td>${p.wins}</td><td>${p.losses}</td></tr>`).join('');
+        function startGame(i) {
+            document.getElementById(`court-${i}`).classList.add('playing');
         }
 
-        function showRound(r) {
-            if(r === 'admin') { const pw = prompt("설정 접근 비밀번호를 입력하세요."); if(pw !== "921512") { alert("비밀번호 불일치"); return; } }
-            document.querySelectorAll('.r-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
-            const targetBtn = document.getElementById(`rbtn${r}`) || document.getElementById(`rbtn-${r}`);
-            if(targetBtn) targetBtn.classList.add('active');
-            if(r === 'result' || r === 'admin') { document.getElementById(`page-${r}`).classList.add('active'); renderRank(); } else { document.getElementById(`page-${r}`).classList.add('active'); }
-            document.getElementById('saveBtn').style.display = (r === 'result' || r === 'admin') ? 'none' : 'block';
+        function endGame(i) {
+            if(!confirm(`${i}번 코트를 종료하고 다음 대기자들을 위로 올릴까요?`)) return;
+            
+            const currentCourt = document.getElementById(`court-${i}`);
+            currentCourt.classList.remove('playing');
+            
+            for(let j = i; j < 6; j++) {
+                const currInputs = document.getElementById(`court-${j}`).querySelectorAll('.player-input');
+                const nextInputs = document.getElementById(`court-${j+1}`).querySelectorAll('.player-input');
+                
+                currInputs.forEach((input, idx) => input.value = nextInputs[idx].value);
+                nextInputs.forEach(input => input.value = '');
+                document.getElementById(`court-${j+1}`).classList.remove('playing');
+            }
         }
-
-        function downloadExcel() { const wb = XLSX.utils.table_to_book(document.getElementById("rankTable"), {sheet: "전적"}); XLSX.writeFile(wb, `콕끼리_결과_${new Date().toISOString().slice(0,10)}.xlsx`); }
-        init();
     </script>
 </body>
 </html>
