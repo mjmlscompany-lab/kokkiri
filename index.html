@@ -8,7 +8,7 @@
     <style>
         :root { 
             --dark: #2c3e50; --bg: #f4f7f9; --result: #9b59b6; 
-            --admin: #34495e; --excel: #27ae60; --win: #2ecc71;       
+            --admin: #34495e; --excel: #27ae60; --win: #2ecc71;        
             --same-seed: #2980b9; --mix-seed: #e91e63; --rnd-seed: #f1c40f; 
             --playing: #ff85a2; --finished: #95a5a6;
         }
@@ -104,7 +104,8 @@
     </div>
 
     <script>
-        const defaultSchedule = { 1: Array(6).fill(null).map(() => ({t0:["",""], t1:["",""]})), 2: Array(6).fill(null).map(() => ({t0:["",""], t1:["",""]})), 3: Array(6).fill(null).map(() => ({t0:["",""], t1:["",""]})), 4: Array(6).fill(null).map(() => ({t0:["",""], t1:["",""]})), 5: Array(6).fill(null).map(() => ({t0:["",""], t1:["",""]})) };
+        // 6경기에서 8경기로 증설
+        const defaultSchedule = { 1: Array(8).fill(null).map(() => ({t0:["",""], t1:["",""]})), 2: Array(8).fill(null).map(() => ({t0:["",""], t1:["",""]})), 3: Array(8).fill(null).map(() => ({t0:["",""], t1:["",""]})), 4: Array(8).fill(null).map(() => ({t0:["",""], t1:["",""]})), 5: Array(8).fill(null).map(() => ({t0:["",""], t1:["",""]})) };
         let fullSchedule = JSON.parse(localStorage.getItem('kok-custom-schedule')) || defaultSchedule;
         let setConfirmed = JSON.parse(localStorage.getItem('kok-set-confirmed')) || {};
         let playerList = [], players = JSON.parse(localStorage.getItem('kok-final-no-rnd')) || [], results = JSON.parse(localStorage.getItem('kok-saved-results')) || {}, playingStatus = JSON.parse(localStorage.getItem('kok-playing-status-nornd')) || {}, activeModalCallback = null;
@@ -276,7 +277,6 @@
 
         function renderRank() {
             const activePlayers = players.filter(p => p.wins > 0 || p.losses > 0);
-            // 수정된 MVP 기준: 4승 이상 OR 무패(1승 이상)
             const mvpPlayers = activePlayers.filter(p => p.wins >= 4 || (p.wins > 0 && p.losses === 0));
             
             const mvpContainer = document.getElementById('mvpContainer');
