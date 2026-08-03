@@ -29,15 +29,23 @@
         .court-card { background: white; border-radius: 18px; padding: 0 0 15px 0; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid #eee; transition: all 0.2s ease; }
         .court-card.playing { border-color: var(--playing); box-shadow: 0 4px 15px rgba(255, 133, 162, 0.3); background: #fffdfd; }
         .court-card.finished { border-color: var(--finished); opacity: 0.9; }
-        .court-header { background: #eef5fc; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s ease; user-select: none; }
+        .court-header { background: #eef5fc; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s ease; user-select: none; gap: 8px; }
         .court-title { font-size: 1rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 5px; }
         .status-text { font-size: 0.8rem; font-weight: bold; color: #777; background: white; padding: 3px 10px; border-radius: 12px; border: 1px solid #ddd; }
         .court-card.playing .status-text { background: var(--playing); color: white; border-color: var(--playing); }
         .court-card.finished .status-text { background: var(--finished); color: white; border-color: var(--finished); }
         .match-body { padding: 15px 15px 0 15px; }
         .match-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .team-section { flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 20px 8px; border-radius: 15px; background: #fff; border: 2px solid #eee; transition: all 0.15s ease; position: relative; min-height: 80px; justify-content: center; text-align: center; cursor: pointer; }
+        .team-section { flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 20px 8px; border-radius: 15px; background: #fff; border: 2px solid #eee; transition: transform 0.15s ease; position: relative; min-height: 80px; justify-content: center; text-align: center; }
         .team-section.winner { background-color: #ebf9eb !important; border-color: var(--win) !important; }
+        .team-section.selecting { background-color: #f2fbf4 !important; border-color: var(--win) !important; transform: scale(0.98); }
+        @keyframes winBadgePulse { 0%, 100% { box-shadow: 0 3px 8px rgba(46,204,113,0.45); } 50% { box-shadow: 0 3px 10px rgba(46,204,113,0.55), 0 0 0 5px rgba(46,204,113,0.15); } }
+        @keyframes winBadgeTap { 0% { transform: translateX(-50%) scale(1); } 45% { transform: translateX(-50%) scale(1.22); } 100% { transform: translateX(-50%) scale(1); } }
+        .win-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--win); color: white; font-size: 0.78rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; border: none; cursor: pointer; box-shadow: 0 3px 8px rgba(46,204,113,0.45); z-index: 5; white-space: nowrap; display: flex; align-items: center; gap: 4px; animation: winBadgePulse 1.8s ease-in-out infinite; transition: filter 0.15s ease; }
+        .win-badge:hover { filter: brightness(1.1); }
+        .win-badge:active { transform: translateX(-50%) scale(0.92); }
+        .win-badge.tap-pop { animation: winBadgeTap 0.32s ease; }
+        .win-badge .medal-emoji { filter: saturate(2) contrast(1.15); }
         .player-wrapper { position: relative; width: calc(100% - 16px); margin: 0 auto; }
         .player-input { background: white; padding: 6px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.95rem; border: 1px solid #eee; font-family: inherit; width: 100%; box-sizing: border-box; color: var(--dark); transition: all 0.15s ease; }
         .player-input:disabled { background: #f9f9f9; color: #999; cursor: not-allowed; }
@@ -54,9 +62,11 @@
         .lock-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 1rem; }
         .lock-btn.locked { background: #27ae60; color: white; }
         .lock-btn.unlocked { background: #e74c3c; color: white; }
-        .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); z-index: 9999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-        .modal-content { background: white; border-radius: 24px; padding: 25px 20px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .modal-icon { font-size: 2.2rem; margin-bottom: 8px; }
+        .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); z-index: 9999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.18s ease; }
+        .modal-overlay.active { opacity: 1; }
+        .modal-content { background: white; border-radius: 24px; padding: 25px 20px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transform: scale(0.85); transition: transform 0.22s cubic-bezier(.34,1.56,.64,1); }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-icon { font-size: 2.6rem; margin-bottom: 8px; filter: saturate(2) contrast(1.15); }
         .modal-title { font-size: 1.15rem; font-weight: 800; color: var(--dark); margin: 0 0 12px 0; line-height: 1.4; }
         .modal-team-names { color: #27ae60; background: #ebf9eb; padding: 10px 15px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; display: inline-block; margin-bottom: 20px; word-break: break-all; }
         .modal-buttons { display: flex; gap: 10px; }
@@ -95,7 +105,7 @@
     <button class="apply-all" id="saveBtn" onclick="confirmAndSave()">전적 합산하기 🐘</button>
     <div class="modal-overlay" id="winModal">
         <div class="modal-content">
-            <div class="modal-icon">🌿</div>
+            <div class="modal-icon">🏅</div>
             <div class="modal-title">아래 팀이 경기에서<br>승리하셨습니까?</div>
             <div class="modal-team-names" id="modalTeamNames"></div>
             <div class="modal-buttons">
@@ -192,14 +202,20 @@
                     const c = idx + 1;
                     const isPlaying = playingStatus[`${r}-${c}`];
                     const isFinished = results[`${r}-${c}`] !== undefined;
+                    const showWinBtn = isLocked && isPlaying && !isFinished;
                     grid += `<div class="court-card ${isPlaying ? 'playing' : ''} ${isFinished ? 'finished' : ''}" id="card-${r}-${c}">
-                        <div class="court-header" onclick="togglePlaying(${r},${c})"><div class="court-title">${c}경기</div><div class="status-text" id="status-${r}-${c}">${isFinished ? '✅ 종료' : (isPlaying ? '⏳ 진행중' : '대기중')}</div></div>
+                        <div class="court-header" onclick="togglePlaying(${r},${c})">
+                            <div class="court-title">${c}경기</div>
+                            <div class="status-text" id="status-${r}-${c}">${isFinished ? '✅ 종료' : (isPlaying ? '⏳ 진행중' : '대기중')}</div>
+                        </div>
                         <div class="match-body"><div class="match-row">
-                            <div class="team-section ${results[`${r}-${c}`] === 0 ? 'winner' : ''}" id="team-${r}-${c}-0" onclick="handleTeamClick(event, ${r}, ${c}, 0)">
+                            <div class="team-section" id="team-${r}-${c}-0">
+                                ${showWinBtn ? `<button class="win-badge" id="winbtn-${r}-${c}-0" onclick="event.stopPropagation(); handleWinBadgeClick(this, ${r}, ${c}, 0)"><span class="medal-emoji">🥇</span>승리</button>` : ''}
                                 ${match.t0.map((p, pIdx) => `<div class="player-wrapper"><input type="text" class="player-input" value="${p}" ${isLocked ? 'disabled' : ''} oninput="searchPlayer(${r}, ${c}, 0, ${pIdx}, this)" onfocus="searchPlayer(${r}, ${c}, 0, ${pIdx}, this)" onblur="hideSuggestDelayed(${r}, ${c}, 0, ${pIdx})" onclick="event.stopPropagation();"><div class="search-suggest" id="suggest-${r}-${c}-0-${pIdx}"></div></div>`).join('')}
                             </div>
                             <div class="vs-divider">VS</div>
-                            <div class="team-section ${results[`${r}-${c}`] === 1 ? 'winner' : ''}" id="team-${r}-${c}-1" onclick="handleTeamClick(event, ${r}, ${c}, 1)">
+                            <div class="team-section" id="team-${r}-${c}-1">
+                                ${showWinBtn ? `<button class="win-badge" id="winbtn-${r}-${c}-1" onclick="event.stopPropagation(); handleWinBadgeClick(this, ${r}, ${c}, 1)"><span class="medal-emoji">🥇</span>승리</button>` : ''}
                                 ${match.t1.map((p, pIdx) => `<div class="player-wrapper"><input type="text" class="player-input" value="${p}" ${isLocked ? 'disabled' : ''} oninput="searchPlayer(${r}, ${c}, 1, ${pIdx}, this)" onfocus="searchPlayer(${r}, ${c}, 1, ${pIdx}, this)" onblur="hideSuggestDelayed(${r}, ${c}, 1, ${pIdx})" onclick="event.stopPropagation();"><div class="search-suggest" id="suggest-${r}-${c}-1-${pIdx}"></div></div>`).join('')}
                             </div>
                         </div></div></div>`;
@@ -252,12 +268,6 @@
             allPage.innerHTML = html;
         }
 
-        function handleTeamClick(e, r, c, winIdx) {
-            if(e.target.classList.contains('player-input') || e.target.classList.contains('suggest-item')) return;
-            if(results[`${r}-${c}`] !== undefined) return;
-            setWinner(r, c, winIdx);
-        }
-
         function searchPlayer(r, c, teamIdx, playerIdx, inputEl) {
             if(setConfirmed[r]) return;
             const text = inputEl.value.trim().toLowerCase(), suggestBox = document.getElementById(`suggest-${r}-${c}-${teamIdx}-${playerIdx}`);
@@ -288,19 +298,47 @@
                     document.getElementById(`team-${r}-${c}-1`).classList.remove('winner');
                     card.classList.remove('finished');
                     playingStatus[key] = true; card.classList.add('playing'); textEl.innerText = '⏳ 진행중';
+                    localStorage.setItem('kok-playing-status-nornd', JSON.stringify(playingStatus));
+                    location.reload();
                 }
                 return;
             }
             if (playingStatus[key]) {
                 if(!confirm("진행중인 경기를 대기중으로 돌리시겠습니까?")) return;
                 delete playingStatus[key]; card.classList.remove('playing'); textEl.innerText = '대기중';
-            } else { playingStatus[key] = true; card.classList.add('playing'); textEl.innerText = '⏳ 진행중'; }
-            localStorage.setItem('kok-playing-status-nornd', JSON.stringify(playingStatus));
+                localStorage.setItem('kok-playing-status-nornd', JSON.stringify(playingStatus));
+                location.reload();
+            } else {
+                playingStatus[key] = true; card.classList.add('playing'); textEl.innerText = '⏳ 진행중';
+                localStorage.setItem('kok-playing-status-nornd', JSON.stringify(playingStatus));
+                location.reload();
+            }
         }
 
-        function openWinModal(names, onConfirm) { document.getElementById('modalTeamNames').innerText = names; document.getElementById('winModal').style.display = 'flex'; document.getElementById('winModal').classList.add('active'); activeModalCallback = onConfirm; }
-        function closeWinModal() { document.getElementById('winModal').classList.remove('active'); document.getElementById('winModal').style.display = 'none'; activeModalCallback = null; }
+        function openWinModal(names, onConfirm) {
+            document.getElementById('modalTeamNames').innerText = names;
+            const modal = document.getElementById('winModal');
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('active')));
+            activeModalCallback = onConfirm;
+        }
+        function closeWinModal() {
+            const modal = document.getElementById('winModal');
+            modal.classList.remove('active');
+            setTimeout(() => { modal.style.display = 'none'; }, 180);
+            activeModalCallback = null;
+            if(selectingTeamEl) { selectingTeamEl.classList.remove('selecting'); selectingTeamEl = null; }
+        }
         document.getElementById('modalConfirmBtn').onclick = function() { if(activeModalCallback) activeModalCallback(); closeWinModal(); };
+
+        let selectingTeamEl = null;
+        function handleWinBadgeClick(btn, r, c, winIdx) {
+            btn.classList.remove('tap-pop'); void btn.offsetWidth; btn.classList.add('tap-pop');
+            const teamEl = document.getElementById(`team-${r}-${c}-${winIdx}`);
+            selectingTeamEl = teamEl;
+            teamEl.classList.add('selecting');
+            setWinner(r, c, winIdx);
+        }
 
         function setWinner(r, c, winIdx) {
             openWinModal(fullSchedule[r][c-1][`t${winIdx}`].join(', '), function() {
@@ -309,6 +347,7 @@
                 const targetTeamEl = document.getElementById(`team-${r}-${c}-${winIdx}`);
                 const card = document.getElementById(`card-${r}-${c}`);
                 const statusEl = document.getElementById(`status-${r}-${c}`);
+                targetTeamEl.classList.remove('selecting');
                 targetTeamEl.classList.add('winner');
                 setTimeout(() => { targetTeamEl.classList.remove('winner'); }, 500);
                 delete playingStatus[`${r}-${c}`];
@@ -316,6 +355,10 @@
                 card.classList.add('finished');
                 statusEl.innerText = '✅ 종료';
                 localStorage.setItem('kok-playing-status-nornd', JSON.stringify(playingStatus));
+                const winBtn0 = document.getElementById(`winbtn-${r}-${c}-0`);
+                const winBtn1 = document.getElementById(`winbtn-${r}-${c}-1`);
+                if(winBtn0) winBtn0.remove();
+                if(winBtn1) winBtn1.remove();
             });
         }
 
