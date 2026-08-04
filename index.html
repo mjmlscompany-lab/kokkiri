@@ -90,9 +90,37 @@
         @keyframes mvpBounceIn { 0% { transform: scale(0.3) rotate(-10deg); opacity: 0; } 55% { transform: scale(1.15) rotate(5deg); opacity: 1; } 75% { transform: scale(0.95) rotate(-3deg); } 100% { transform: scale(1) rotate(0); } }
         @keyframes mvpTextPop { 0% { transform: translateY(10px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
         .save-img-btn { background: #e67e22; color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; margin-bottom: 20px; cursor: pointer; font-size: 1rem; }
+        .mvp-play-btn { background: linear-gradient(135deg,#8e44ad,#c0392b); color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; font-weight: 900; margin-bottom: 16px; cursor: pointer; font-size: 1.05rem; box-shadow: 0 4px 12px rgba(142,68,173,0.4); }
+        .mvp-seq-overlay { position: fixed; inset: 0; background: #000; z-index: 99999; display: none; align-items: center; justify-content: center; overflow: hidden; }
+        .mvp-seq-overlay.active { display: flex; }
+        .mvp-seq-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; background:#000; }
+        .mvp-seq-video.active { display: block; }
+        .mvp-seq-bg { position: absolute; inset: 0; background-image: url('3.png'); background-size: cover; background-position: center; opacity: 0; transition: opacity 0.6s ease; }
+        .mvp-seq-bg.active { opacity: 1; }
+        .mvp-seq-cards { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.96); transition: opacity 0.6s ease, transform 0.6s ease; padding: 20px; box-sizing: border-box; }
+        .mvp-seq-cards.active { opacity: 1; transform: scale(1); }
+        .mvp-seq-elephant { position: relative; z-index: 5; margin-bottom: -1.5%; width: 16%; max-width: 190px; min-width: 80px; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.5)); }
+        .mvp-seq-cardrow { display: flex; justify-content: center; align-items: flex-end; flex-wrap: wrap; row-gap: 10px; }
+        .mvp-seq-card { position: relative; opacity: 0; transform: translateY(30px) scale(0.85); animation: mvpCardIn 0.6s cubic-bezier(.36,1.5,.4,1) forwards; }
+        @keyframes mvpCardIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+        .mvp-seq-card img { display: block; width: 100%; }
+        .mvp-seq-name { position: absolute; left: 6%; right: 6%; text-align: center; color: #fff; font-weight: 900; text-shadow: 0 2px 6px rgba(0,0,0,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mvp-seq-close { position: absolute; top: 16px; right: 16px; z-index: 20; background: rgba(255,255,255,0.18); color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; cursor: pointer; }
+        .mvp-seq-skip { position: absolute; bottom: 16px; right: 16px; z-index: 20; background: rgba(255,255,255,0.18); color: #fff; border: none; border-radius: 20px; padding: 8px 16px; font-size: 0.85rem; cursor: pointer; }
     </style>
 </head>
 <body>
+    <div class="mvp-seq-overlay" id="mvpSeqOverlay">
+        <video class="mvp-seq-video" id="mvpSeqVideo1" src="1.mp4" playsinline></video>
+        <video class="mvp-seq-video" id="mvpSeqVideo2" src="2.mp4" playsinline></video>
+        <div class="mvp-seq-bg" id="mvpSeqBg"></div>
+        <div class="mvp-seq-cards" id="mvpSeqCardsWrap">
+            <img class="mvp-seq-elephant" id="mvpSeqElephant" src="elephant.png" alt="콕끼리">
+            <div class="mvp-seq-cardrow" id="mvpSeqCards"></div>
+        </div>
+        <button class="mvp-seq-close" onclick="closeMvpSequence()">✕</button>
+        <button class="mvp-seq-skip" id="mvpSeqSkipBtn" onclick="skipMvpSequence()">건너뛰기 ▶</button>
+    </div>
     <div class="round-tabs" id="roundTabs"></div>
     <div id="mainContainer"></div>
     <div id="page-result" class="page-content">
@@ -111,6 +139,7 @@
             <div class="mvp-container">
                 <div class="mvp-title">👑 오늘의 MVP (4승 이상 OR 무패)</div>
                 <div class="mvp-badge-wrapper" id="mvpContainer"></div>
+                <button class="mvp-play-btn" id="mvpPlayBtn" onclick="startMvpSequence()" style="display:none;">🎬 MVP 발표 시작하기</button>
             </div>
         </div>
     </div>
@@ -440,23 +469,133 @@
             }, 800);
         }
 
+        function computeMvpPlayers() {
+            const activePlayers = players.filter(p => p.wins > 0 || p.losses > 0);
+            return activePlayers.filter(p => p.wins >= 4 || (p.wins > 0 && p.losses === 0));
+        }
+
         function renderRank() {
             const activePlayers = players.filter(p => p.wins > 0 || p.losses > 0);
-            const mvpPlayers = activePlayers.filter(p => p.wins >= 4 || (p.wins > 0 && p.losses === 0));
+            const mvpPlayers = computeMvpPlayers();
             const mvpContainer = document.getElementById('mvpContainer');
             mvpContainer.innerHTML = mvpPlayers.length > 0 ? 
                 mvpPlayers.map(p => `<div class="mvp-badge">🏅 ${p.name} (${p.wins}승)</div>`).join('') : 
                 `<span style="font-size:0.85rem; color:#999; font-weight:bold;">MVP 조건 충족자가 없습니다.</span>`;
             const celebrateEl = document.getElementById('mvpCelebrate');
+            const playBtn = document.getElementById('mvpPlayBtn');
             if (mvpPlayers.length > 0) {
                 playMvpCountdown();
+                if (playBtn) playBtn.style.display = 'block';
             } else {
                 celebrateEl.style.display = 'none';
                 celebrateEl.classList.remove('play');
                 if(mvpCountdownTimer) { clearInterval(mvpCountdownTimer); mvpCountdownTimer = null; }
+                if (playBtn) playBtn.style.display = 'none';
             }
             const sorted = [...activePlayers].sort((a, b) => b.wins - a.wins);
             document.getElementById('rankBody').innerHTML = sorted.map((p) => `<tr><td><strong>${p.name}</strong></td><td>${p.wins}</td><td>${p.losses}</td></tr>`).join('');
+        }
+
+        // ===== MVP 발표 시퀀스: 1.mp4 재생 -> 2.mp4 카운트다운 -> 블랙배경 -> MVP 명단 공개 =====
+        function startMvpSequence() {
+            const mvpPlayers = computeMvpPlayers();
+            playMvpSequence(mvpPlayers.length > 0 ? mvpPlayers : [{ name: '쵸이', wins: 0 }]);
+        }
+
+        function playMvpSequence(mvpPlayers) {
+            const overlay = document.getElementById('mvpSeqOverlay');
+            const v1 = document.getElementById('mvpSeqVideo1');
+            const v2 = document.getElementById('mvpSeqVideo2');
+            const bg = document.getElementById('mvpSeqBg');
+            const cardsWrap = document.getElementById('mvpSeqCardsWrap');
+
+            [v1, v2].forEach(v => { v.classList.remove('active'); v.pause(); v.currentTime = 0; });
+            bg.classList.remove('active');
+            cardsWrap.classList.remove('active');
+            document.getElementById('mvpSeqCards').innerHTML = '';
+            overlay.classList.add('active');
+
+            v1.onended = () => step2();
+            v2.onended = () => step3();
+
+            function step2() {
+                v1.classList.remove('active');
+                v1.pause();
+                v2.classList.add('active');
+                v2.currentTime = 0;
+                v2.play().catch(() => step3());
+            }
+            function step3() {
+                v2.classList.remove('active');
+                v2.pause();
+                bg.classList.add('active');
+                setTimeout(step4, 500);
+            }
+            function step4() {
+                renderMvpCards(mvpPlayers);
+                cardsWrap.classList.add('active');
+            }
+
+            overlay.dataset.step = '1';
+            v1.classList.add('active');
+            v1.currentTime = 0;
+            v1.play().catch(() => step2());
+        }
+
+        function renderMvpCards(mvpPlayers) {
+            const row = document.getElementById('mvpSeqCards');
+            row.innerHTML = '';
+            const n = mvpPlayers.length;
+            // 명단 인원에 따라 카드 크기/간격(페더) 유동적으로 조정
+            let cardWidth = 220;
+            let gap = 14;
+            if (n > 5) {
+                cardWidth = Math.max(110, Math.round(220 - (n - 5) * 16));
+                gap = Math.max(-24, Math.round(14 - (n - 5) * 6));
+            } else if (n <= 2) {
+                cardWidth = 260;
+            }
+            row.style.gap = gap + 'px';
+            mvpPlayers.forEach((p, i) => {
+                const card = document.createElement('div');
+                card.className = 'mvp-seq-card';
+                card.style.width = cardWidth + 'px';
+                card.style.animationDelay = (i * 0.12) + 's';
+                const img = document.createElement('img');
+                img.src = 'card_template.png';
+                img.alt = 'MVP';
+                const nameEl = document.createElement('div');
+                nameEl.className = 'mvp-seq-name';
+                nameEl.style.top = '77.5%';
+                nameEl.style.fontSize = Math.max(13, Math.round(cardWidth * 0.135)) + 'px';
+                nameEl.textContent = p.name;
+                card.appendChild(img);
+                card.appendChild(nameEl);
+                row.appendChild(card);
+            });
+        }
+
+        function closeMvpSequence() {
+            const overlay = document.getElementById('mvpSeqOverlay');
+            const v1 = document.getElementById('mvpSeqVideo1');
+            const v2 = document.getElementById('mvpSeqVideo2');
+            v1.pause(); v2.pause();
+            overlay.classList.remove('active');
+        }
+
+        function skipMvpSequence() {
+            const v1 = document.getElementById('mvpSeqVideo1');
+            const v2 = document.getElementById('mvpSeqVideo2');
+            const bg = document.getElementById('mvpSeqBg');
+            const cardsWrap = document.getElementById('mvpSeqCardsWrap');
+            v1.pause(); v1.classList.remove('active');
+            v2.pause(); v2.classList.remove('active');
+            bg.classList.add('active');
+            if (!cardsWrap.classList.contains('active')) {
+                const mvpPlayers = computeMvpPlayers();
+                renderMvpCards(mvpPlayers.length > 0 ? mvpPlayers : [{ name: '쵸이', wins: 0 }]);
+                cardsWrap.classList.add('active');
+            }
         }
 
         function showRound(r) {
